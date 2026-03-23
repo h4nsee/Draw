@@ -1,81 +1,163 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gartic Draw</title>
+    <title>Gartic Studio</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #1a1a1a; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif; color: white; }
-        .header { padding: 10px; text-align: center; font-size: 14px; background: #2a2a2a; border-bottom: 1px solid #444; }
-        canvas { background: #ffffff; flex-grow: 1; touch-action: none; }
-        .controls { padding: 15px; display: flex; gap: 10px; background: #2a2a2a; }
-        button { padding: 12px; font-size: 16px; border: none; border-radius: 8px; font-weight: bold; flex: 1; transition: 0.2s; }
-        .btn-clear { background: #444; color: white; }
-        .btn-send { background: #0088cc; color: white; }
-        button:active { opacity: 0.7; transform: scale(0.95); }
+        :root { --bg: #1c1c1e; --panel: #2c2c2e; --accent: #007aff; }
+        body { margin: 0; padding: 0; background: var(--bg); color: white; font-family: -apple-system, system-ui, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* Панель сверху */
+        .top-bar { padding: 10px; background: var(--panel); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3d3d41; }
+        .task { font-size: 14px; font-weight: 500; color: #aaa; }
+
+        /* Холст */
+        #canvas-container { flex-grow: 1; position: relative; background: white; margin: 10px; border-radius: 12px; overflow: hidden; }
+        canvas { display: block; touch-action: none; }
+
+        /* Инструменты снизу */
+        .toolbar { background: var(--panel); padding: 15px; border-top: 1px solid #3d3d41; }
+        .colors { display: flex; justify-content: space-between; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .color-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; flex-shrink: 0; }
+        .color-dot.active { border-color: white; transform: scale(1.1); }
+
+        .size-picker { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        input[type=range] { flex-grow: 1; }
+
+        .actions { display: flex; gap: 10px; }
+        button { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: bold; font-size: 15px; cursor: pointer; }
+        .btn-clear { background: #3a3a3c; color: #ff453a; }
+        .btn-send { background: var(--accent); color: white; }
     </style>
 </head>
 <body>
-    <div class="header" id="task-text">Загрузка...</div>
-    <canvas id="canvas"></canvas>
-    <div class="controls">
-        <button class="btn-clear" onclick="clearCanvas()">Стереть</button>
-        <button class="btn-send" onclick="sendDrawing()">Готово!</button>
+    <div class="top-bar">
+        <div class="task" id="task-text">Задание: Кот в космосе</div>
+        <div id="undo-btn" style="cursor:pointer; color: var(--accent)">↩️ Шаг назад</div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="toolbar">
+        <div class="colors" id="palette">
+            </div>
+        
+        <div class="size-picker">
+            <span>✏️</span>
+            <input type="range" id="size" min="2" max="20" value="5">
+        </div>
+
+        <div class="actions">
+            <button class="btn-clear" onclick="clearAll()">Очистить</button>
+            <button class="btn-send" onclick="finish()">Готово</button>
+        </div>
     </div>
 
     <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const taskText = document.getElementById('task-text');
+        const palette = document.getElementById('palette');
+        const sizeInput = document.getElementById('size');
+        
         let drawing = false;
+        let history = []; // Для отмены действий
 
-        // Инициализация WebApp
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Развернуть на весь экран
+        // Цвета Gartic
+        const colors = ['#000000', '#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#5ac8fa', '#007aff', '#5856d6', '#af52de'];
+        let currentColor = '#000000';
 
-        // Получаем задание из параметров (если будет передано)
-        const urlParams = new URLSearchParams(window.location.search);
-        taskText.innerText = urlParams.get('task') || "Нарисуй что-нибудь!";
-
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight - 130; // Учитываем хедер и кнопки
-            ctx.lineWidth = 4;
-            ctx.lineJoin = 'round';
+        function init() {
+            const container = document.getElementById('canvas-container');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
             ctx.lineCap = 'round';
-            ctx.strokeStyle = '#000';
-        }
-        window.onresize = resize;
-        resize();
+            ctx.lineJoin = 'round';
+            saveState(); // Сохраняем пустой холст
 
-        function start(e) { drawing = true; draw(e); }
-        function end() { drawing = false; ctx.beginPath(); }
+            colors.forEach(c => {
+                const dot = document.createElement('div');
+                dot.className = 'color-dot';
+                dot.style.background = c;
+                if(c === currentColor) dot.classList.add('active');
+                dot.onclick = () => {
+                    document.querySelector('.color-dot.active').classList.remove('active');
+                    dot.classList.add('active');
+                    currentColor = c;
+                };
+                palette.appendChild(dot);
+            });
+        }
+
+        function saveState() {
+            if (history.length > 20) history.shift();
+            history.push(canvas.toDataURL());
+        }
+
+        document.getElementById('undo-btn').onclick = () => {
+            if (history.length > 1) {
+                history.pop();
+                const img = new Image();
+                img.src = history[history.length - 1];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        };
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const t = e.touches ? e.touches[0] : e;
+            return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+        }
+
+        function start(e) { 
+            drawing = true; 
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
         function draw(e) {
             if (!drawing) return;
-            const t = e.touches ? e.touches[0] : e;
-            const rect = canvas.getBoundingClientRect();
-            ctx.lineTo(t.clientX - rect.left, t.clientY - rect.top);
+            const pos = getPos(e);
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = sizeInput.value;
+            ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(t.clientX - rect.left, t.clientY - rect.top);
+        }
+
+        function stop() { 
+            if(drawing) saveState();
+            drawing = false; 
         }
 
         canvas.addEventListener('mousedown', start);
         canvas.addEventListener('mousemove', draw);
-        window.addEventListener('mouseup', end);
+        window.addEventListener('mouseup', stop);
         canvas.addEventListener('touchstart', start);
         canvas.addEventListener('touchmove', draw);
-        window.addEventListener('touchend', end);
+        canvas.addEventListener('touchend', stop);
 
-        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-        function sendDrawing() {
-            const dataUrl = canvas.toDataURL('image/png');
-            // Отправляем данные в бота
-            tg.sendData(dataUrl);
-            tg.close(); // Закрываем окно
+        function clearAll() { 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            saveState();
         }
+
+        function finish() {
+            const data = canvas.toDataURL('image/png');
+            tg.sendData(data);
+        }
+
+        init();
     </script>
 </body>
 </html>
+
