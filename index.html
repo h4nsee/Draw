@@ -217,8 +217,8 @@
                 formData.append('user_id', user_id);
                 formData.append('chat_id', chat_id);
 
-                // ЗАМЕНИ НА IP СВОЕГО СЕРВЕРА
-                const SERVER_URL = 'http://ВАШ_IP_СЕРВЕРА:8080/upload';
+                // Твой IPv6 адрес
+                const SERVER_URL = 'http://[2a03:6f01:1:2::1:ec3f]:8080/upload';
 
                 fetch(SERVER_URL, {
                     method: 'POST',
@@ -227,11 +227,11 @@
                 })
                 .then(res => {
                     if(res.ok) tg.close();
-                    else alert("Ошибка сервера");
+                    else alert("Ошибка сервера. Убедитесь, что порт 8080 открыт.");
                 })
                 .catch(err => {
                     console.error(err);
-                    alert("Ошибка сети. Проверьте порт 8080 на сервере.");
+                    alert("Ошибка сети. Проверьте соединение с сервером.");
                     isSent = false;
                     sendBtn.innerText = "Готово";
                 });
