@@ -9,7 +9,7 @@
         :root {
             /* Темная тема (по умолчанию) */
             --bg-color: #111111; --panel-color: #1c1c1e; --text-color: #ffffff;
-            --accent-color: #8e44ad; /* Фиолетовый */
+            --accent-color: #8e44ad; 
             --danger-color: #ff453a; --border-color: #38383a; --canvas-bg: #ffffff;
         }
 
@@ -22,7 +22,6 @@
             margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color);
             font-family: -apple-system, system-ui, sans-serif; display: flex; flex-direction: column;
             height: 100vh; overflow: hidden; 
-            /* ФИКС СВАЙПА */
             touch-action: none; 
             -webkit-user-select: none;
             user-select: none;
@@ -40,14 +39,12 @@
 
         .top-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
-        /* Таймер */
         .timer-container { position: relative; width: 40px; height: 40px; }
         .timer-svg { transform: rotate(-90deg); width: 40px; height: 40px; }
         .timer-bg { fill: none; stroke: var(--border-color); stroke-width: 3; }
         .timer-progress { fill: none; stroke: var(--accent-color); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
         .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 13px; font-weight: bold; }
 
-        /* Кнопка Темы */
         #theme-btn {
             width: 40px; height: 40px; background: none; border: 1px solid var(--border-color);
             border-radius: 50%; color: var(--text-color); display: flex; align-items: center; justify-content: center;
@@ -120,12 +117,14 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.enableClosingConfirmation(); // Защита от случайного закрытия
+        tg.enableClosingConfirmation();
         tg.ready();
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let drawing = false, history = [], currentColor = '#000000';
+        let isSent = false; // Флаг для предотвращения двойной отправки
+        let timerInterval;
 
         // ТАЙМЕР
         let timeLeft = 60;
@@ -141,11 +140,14 @@
                 timerNum.innerText = timeLeft;
                 let offset = circumference - (timeLeft / total) * circumference;
                 timerCircle.style.strokeDashoffset = offset;
-                if (timeLeft <= 0) { clearInterval(interval); sendDrawing(); }
+                if (timeLeft <= 0) { 
+                    clearInterval(timerInterval); 
+                    sendDrawing(); 
+                }
                 timeLeft--;
             };
             update();
-            const interval = setInterval(update, 1000);
+            timerInterval = setInterval(update, 1000);
         }
 
         // ТЕМА
@@ -186,15 +188,18 @@
             ctx.scale(dpr, dpr);
             canvas.style.width = container.clientWidth + 'px'; canvas.style.height = container.clientHeight + 'px';
             ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            
+            // Начинаем с чистого белого фона (важно для сохранения в PNG)
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             saveState();
 
-            const colors = ['#000000', '#ffffff', '#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#007aff', '#8e44ad', '#5856d6'];
+            const colors = ['#000000', '#7f7f7f', '#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#007aff', '#5856d6', '#8e44ad'];
             colors.forEach(c => {
                 const dot = document.createElement('div');
                 dot.className = 'color-dot';
                 dot.style.background = c;
                 if(c === currentColor) dot.classList.add('active');
-                if(c === '#ffffff') dot.style.border = '2px solid #d1d1d6';
                 dot.onclick = () => {
                     document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
                     dot.classList.add('active');
@@ -205,8 +210,20 @@
             });
         }
 
-        function saveState() { if (history.length > 30) history.shift(); history.push(canvas.toDataURL()); }
-        function undo() { if (history.length > 1) { history.pop(); let img = new Image(); img.src = history[history.length-1]; img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0,canvas.width/(window.devicePixelRatio||1),canvas.height/(window.devicePixelRatio||1)); }; tg.HapticFeedback.impactOccurred('light'); } }
+        function saveState() { if (history.length > 20) history.shift(); history.push(canvas.toDataURL()); }
+        
+        function undo() { 
+            if (history.length > 1) { 
+                history.pop(); 
+                let img = new Image(); 
+                img.src = history[history.length-1]; 
+                img.onload = () => { 
+                    ctx.clearRect(0,0,canvas.width,canvas.height); 
+                    ctx.drawImage(img,0,0,canvas.width/(window.devicePixelRatio||1),canvas.height/(window.devicePixelRatio||1)); 
+                }; 
+                tg.HapticFeedback.impactOccurred('light'); 
+            } 
+        }
         
         const getPos = (e) => { 
             const rect = canvas.getBoundingClientRect(); 
@@ -214,10 +231,9 @@
             return { x: t.clientX - rect.left, y: t.clientY - rect.top }; 
         };
 
-        // Исправленные события касания с блокировкой свайпов
         canvas.addEventListener('touchstart', (e) => { 
             if(e.target.closest('.toolbar, .top-bar')) return; 
-            e.preventDefault(); // Блокируем свайп Telegram
+            e.preventDefault(); 
             drawing = true; 
             ctx.beginPath(); 
             let p = getPos(e); 
@@ -226,7 +242,7 @@
 
         canvas.addEventListener('touchmove', (e) => { 
             if(!drawing) return; 
-            e.preventDefault(); // Блокируем свайп Telegram
+            e.preventDefault(); 
             let p = getPos(e); 
             ctx.strokeStyle = currentColor; 
             ctx.lineWidth = document.getElementById('size-slider').value; 
@@ -236,11 +252,43 @@
 
         canvas.addEventListener('touchend', () => { if(drawing) saveState(); drawing = false; });
 
-        function clearCanvas() { ctx.clearRect(0,0,canvas.width,canvas.height); saveState(); tg.HapticFeedback.notificationOccurred('warning'); }
-        function sendDrawing() { tg.sendData(canvas.toDataURL()); setTimeout(() => tg.close(), 100); }
+        function clearCanvas() { 
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0,0,canvas.width,canvas.height); 
+            saveState(); 
+            tg.HapticFeedback.notificationOccurred('warning'); 
+        }
+
+        // ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ
+        function sendDrawing() {
+            if (isSent) return;
+            isSent = true;
+            clearInterval(timerInterval);
+
+            // Создаем временный канвас 400x400 для сжатия
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = 400;
+            tempCanvas.height = 400;
+
+            // Рисуем белый фон и масштабируем рисунок
+            tempCtx.fillStyle = '#ffffff';
+            tempCtx.fillRect(0, 0, 400, 400);
+            tempCtx.drawImage(canvas, 0, 0, 400, 400);
+
+            // Получаем сжатую строку (0.7 - баланс качества и веса)
+            const data = tempCanvas.toDataURL('image/png');
+
+            // Отправляем данные боту
+            tg.sendData(data);
+            
+            // Закрываем приложение через мгновение
+            setTimeout(() => {
+                tg.close();
+            }, 150);
+        }
 
         init();
     </script>
 </body>
 </html>
-
