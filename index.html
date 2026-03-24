@@ -31,7 +31,6 @@
         .timer-container { position: relative; width: 40px; height: 40px; }
         .timer-svg { transform: rotate(-90deg); width: 40px; height: 40px; }
         .timer-bg { fill: none; stroke: var(--border-color); stroke-width: 3; }
-        /* Плавная анимация таймера */
         .timer-progress { 
             fill: none; stroke: var(--accent-color); stroke-width: 3; stroke-linecap: round; 
             transition: stroke-dashoffset 1s linear; 
@@ -208,11 +207,14 @@
             sendBtn.style.opacity = "0.7";
 
             try {
+                // ИСПРАВЛЕНИЕ: Теперь мы сохраняем оригинальные пропорции холста, а не жмем его в 400x400
                 const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width; 
+                tempCanvas.height = canvas.height;
                 const tempCtx = tempCanvas.getContext('2d');
-                tempCanvas.width = 400; tempCanvas.height = 400;
-                tempCtx.fillStyle = '#ffffff'; tempCtx.fillRect(0, 0, 400, 400);
-                tempCtx.drawImage(canvas, 0, 0, 400, 400);
+                tempCtx.fillStyle = '#ffffff'; 
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.drawImage(canvas, 0, 0);
                 
                 const dataURL = tempCanvas.toDataURL('image/png', 0.8);
                 const base64Data = dataURL.split(',')[1];
