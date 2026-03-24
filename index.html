@@ -31,7 +31,11 @@
         .timer-container { position: relative; width: 40px; height: 40px; }
         .timer-svg { transform: rotate(-90deg); width: 40px; height: 40px; }
         .timer-bg { fill: none; stroke: var(--border-color); stroke-width: 3; }
-        .timer-progress { fill: none; stroke: var(--accent-color); stroke-width: 3; stroke-linecap: round; }
+        /* Плавная анимация таймера */
+        .timer-progress { 
+            fill: none; stroke: var(--accent-color); stroke-width: 3; stroke-linecap: round; 
+            transition: stroke-dashoffset 1s linear; 
+        }
         .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 13px; font-weight: bold; }
         #theme-btn {
             width: 40px; height: 40px; background: none; border: 1px solid var(--border-color);
@@ -121,10 +125,18 @@
             const progress = document.getElementById('timer-progress');
             const circ = 2 * Math.PI * 17;
             progress.style.strokeDasharray = circ;
+            
+            // Сразу устанавливаем начальную позицию
+            progress.style.strokeDashoffset = 0;
+
             timerInterval = setInterval(() => {
                 document.getElementById('timer-num').innerText = timeLeft;
-                progress.style.strokeDashoffset = circ - (timeLeft / seconds) * circ;
-                if (timeLeft <= 0) { clearInterval(timerInterval); sendDrawing(); }
+                progress.style.strokeDashoffset = ( (seconds - timeLeft + 1) / seconds) * circ;
+                
+                if (timeLeft <= 0) { 
+                    clearInterval(timerInterval); 
+                    sendDrawing(); 
+                }
                 timeLeft--;
             }, 1000);
         }
@@ -197,11 +209,21 @@
                 tempCanvas.width = 400; tempCanvas.height = 400;
                 tempCtx.fillStyle = '#ffffff'; tempCtx.fillRect(0, 0, 400, 400);
                 tempCtx.drawImage(canvas, 0, 0, 400, 400);
+                
                 const data = tempCanvas.toDataURL('image/png', 0.8);
-                tg.sendData(data);
-                setTimeout(() => { tg.close(); }, 200);
+                
+                // Проверка на наличие Telegram объекта перед отправкой
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.sendData(data);
+                    // Небольшая пауза, чтобы данные гарантированно улетели до закрытия
+                    setTimeout(() => {
+                        window.Telegram.WebApp.close();
+                    }, 150);
+                }
             } catch (e) {
-                tg.close();
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.close();
+                }
             }
         }
         init();
