@@ -125,12 +125,9 @@
             const circ = 2 * Math.PI * 17;
             progress.style.strokeDasharray = circ;
             
-            progress.style.strokeDashoffset = 0;
-
             timerInterval = setInterval(() => {
                 document.getElementById('timer-num').innerText = timeLeft;
-                progress.style.strokeDashoffset = ( (seconds - timeLeft + 1) / seconds) * circ;
-                
+                progress.style.strokeDashoffset = ((seconds - timeLeft) / seconds) * circ;
                 if (timeLeft <= 0) { 
                     clearInterval(timerInterval); 
                     sendDrawing(); 
@@ -168,11 +165,15 @@
         }
 
         function saveState() { if (history.length > 20) history.shift(); history.push(canvas.toDataURL()); }
+        
         function undo() { 
             if (history.length > 1) { 
                 history.pop(); 
                 let img = new Image(); img.src = history[history.length-1];
-                img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0,canvas.width/(window.devicePixelRatio||1),canvas.height/(window.devicePixelRatio||1)); };
+                img.onload = () => { 
+                    ctx.clearRect(0,0,canvas.width,canvas.height); 
+                    ctx.drawImage(img,0,0,canvas.width/(window.devicePixelRatio||1),canvas.height/(window.devicePixelRatio||1)); 
+                };
             } 
         }
 
@@ -195,6 +196,7 @@
         }, {passive: false});
 
         canvas.addEventListener('touchend', () => { if(drawing) saveState(); drawing = false; });
+        
         function clearCanvas() { ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height); saveState(); }
 
         function sendDrawing() {
@@ -203,49 +205,39 @@
             clearInterval(timerInterval);
             
             const sendBtn = document.querySelector('.btn-send');
-            sendBtn.innerText = "Отправка...";
-            sendBtn.style.opacity = "0.7";
+            sendBtn.innerText = "Сохранение...";
 
-            try {
-                // ИСПРАВЛЕНИЕ: Теперь мы сохраняем оригинальные пропорции холста, а не жмем его в 400x400
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = canvas.width; 
-                tempCanvas.height = canvas.height;
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.fillStyle = '#ffffff'; 
-                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                tempCtx.drawImage(canvas, 0, 0);
-                
-                const dataURL = tempCanvas.toDataURL('image/png', 0.8);
-                const base64Data = dataURL.split(',')[1];
+            const params = new URLSearchParams(window.location.search);
+            const chat_id = params.get('chat_id');
+            const user_id = tg.initDataUnsafe.user.id;
 
+            canvas.toBlob(function(blob) {
                 const formData = new FormData();
-                formData.append("image", base64Data);
+                formData.append('image', blob, 'drawing.png');
+                formData.append('user_id', user_id);
+                formData.append('chat_id', chat_id);
 
-                const imgbbKey = "2cb542f21f0de1a43a410de610af964c";
+                // ЗАМЕНИ НА IP СВОЕГО СЕРВЕРА
+                const SERVER_URL = 'http://ВАШ_IP_СЕРВЕРА:8080/upload';
 
-                fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
-                    method: "POST",
-                    body: formData
+                fetch(SERVER_URL, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'cors'
                 })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success && window.Telegram && window.Telegram.WebApp) {
-                        window.Telegram.WebApp.sendData("URL:" + result.data.url);
-                        window.Telegram.WebApp.close();
-                    }
+                .then(res => {
+                    if(res.ok) tg.close();
+                    else alert("Ошибка сервера");
                 })
                 .catch(err => {
-                    sendBtn.innerText = "Ошибка сети";
-                    setTimeout(() => window.Telegram.WebApp.close(), 1500);
+                    console.error(err);
+                    alert("Ошибка сети. Проверьте порт 8080 на сервере.");
+                    isSent = false;
+                    sendBtn.innerText = "Готово";
                 });
-
-            } catch (e) {
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.close();
-                }
-            }
+            }, 'image/png');
         }
+
         init();
     </script>
 </body>
