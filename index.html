@@ -126,7 +126,6 @@
             const circ = 2 * Math.PI * 17;
             progress.style.strokeDasharray = circ;
             
-            // Сразу устанавливаем начальную позицию
             progress.style.strokeDashoffset = 0;
 
             timerInterval = setInterval(() => {
@@ -212,10 +211,8 @@
                 
                 const data = tempCanvas.toDataURL('image/png', 0.8);
                 
-                // Проверка на наличие Telegram объекта перед отправкой
                 if (window.Telegram && window.Telegram.WebApp) {
                     window.Telegram.WebApp.sendData(data);
-                    // Небольшая пауза, чтобы данные гарантированно улетели до закрытия
                     setTimeout(() => {
                         window.Telegram.WebApp.close();
                     }, 150);
