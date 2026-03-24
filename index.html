@@ -165,7 +165,6 @@
         }
 
         function saveState() { if (history.length > 20) history.shift(); history.push(canvas.toDataURL()); }
-        
         function undo() { 
             if (history.length > 1) { 
                 history.pop(); 
@@ -196,7 +195,6 @@
         }, {passive: false});
 
         canvas.addEventListener('touchend', () => { if(drawing) saveState(); drawing = false; });
-        
         function clearCanvas() { ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height); saveState(); }
 
         function sendDrawing() {
@@ -209,7 +207,11 @@
 
             const params = new URLSearchParams(window.location.search);
             const chat_id = params.get('chat_id');
-            const user_id = tg.initDataUnsafe.user.id;
+            const user_id = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "unknown";
+
+            // Таймаут на случай, если сервер молчит
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
 
             canvas.toBlob(function(blob) {
                 const formData = new FormData();
@@ -217,27 +219,27 @@
                 formData.append('user_id', user_id);
                 formData.append('chat_id', chat_id);
 
-                // Твой IPv6 адрес
                 const SERVER_URL = 'http://[2a03:6f01:1:2::1:ec3f]:8080/upload';
 
                 fetch(SERVER_URL, {
                     method: 'POST',
                     body: formData,
-                    mode: 'cors'
+                    mode: 'cors',
+                    signal: controller.signal
                 })
                 .then(res => {
+                    clearTimeout(timeoutId);
                     if(res.ok) tg.close();
-                    else alert("Ошибка сервера. Убедитесь, что порт 8080 открыт.");
+                    else alert("Ошибка сервера: " + res.status);
                 })
                 .catch(err => {
-                    console.error(err);
-                    alert("Ошибка сети. Проверьте соединение с сервером.");
+                    clearTimeout(timeoutId);
+                    alert("Ошибка: " + err.message + "\nПроверь порт 8080 в Firewall!");
                     isSent = false;
                     sendBtn.innerText = "Готово";
                 });
             }, 'image/png');
         }
-
         init();
     </script>
 </body>
