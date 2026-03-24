@@ -202,6 +202,11 @@
             if (isSent) return;
             isSent = true;
             clearInterval(timerInterval);
+            
+            const sendBtn = document.querySelector('.btn-send');
+            sendBtn.innerText = "Отправка...";
+            sendBtn.style.opacity = "0.7";
+
             try {
                 const tempCanvas = document.createElement('canvas');
                 const tempCtx = tempCanvas.getContext('2d');
@@ -209,14 +214,30 @@
                 tempCtx.fillStyle = '#ffffff'; tempCtx.fillRect(0, 0, 400, 400);
                 tempCtx.drawImage(canvas, 0, 0, 400, 400);
                 
-                const data = tempCanvas.toDataURL('image/png', 0.8);
-                
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.sendData(data);
-                    setTimeout(() => {
+                const dataURL = tempCanvas.toDataURL('image/png', 0.8);
+                const base64Data = dataURL.split(',')[1];
+
+                const formData = new FormData();
+                formData.append("image", base64Data);
+
+                const imgbbKey = "2cb542f21f0de1a43a410de610af964c";
+
+                fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success && window.Telegram && window.Telegram.WebApp) {
+                        window.Telegram.WebApp.sendData("URL:" + result.data.url);
                         window.Telegram.WebApp.close();
-                    }, 150);
-                }
+                    }
+                })
+                .catch(err => {
+                    sendBtn.innerText = "Ошибка сети";
+                    setTimeout(() => window.Telegram.WebApp.close(), 1500);
+                });
+
             } catch (e) {
                 if (window.Telegram && window.Telegram.WebApp) {
                     window.Telegram.WebApp.close();
