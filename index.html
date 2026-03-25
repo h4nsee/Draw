@@ -203,7 +203,7 @@
             clearInterval(timerInterval);
             
             const sendBtn = document.querySelector('.btn-send');
-            sendBtn.innerText = "Сохранение...";
+            sendBtn.innerText = "Отправка...";
 
             const params = new URLSearchParams(window.location.search);
             const chat_id = params.get('chat_id');
@@ -218,7 +218,8 @@
                 formData.append('user_id', user_id);
                 formData.append('chat_id', chat_id);
 
-                const SERVER_URL = 'http://[2a03:6f01:1:2::1:ec3f]:8080/upload';
+                // Запрос теперь летит на ваш IPv4 адрес
+                const SERVER_URL = 'http://89.223.68.124:8080/upload';
 
                 fetch(SERVER_URL, {
                     method: 'POST',
@@ -233,7 +234,7 @@
                 })
                 .catch(err => {
                     clearTimeout(timeoutId);
-                    alert("Ошибка сети. Убедитесь, что порт 8080 открыт.");
+                    alert("Ошибка сети. Убедитесь, что порт 8080 открыт для IPv4.");
                     isSent = false;
                     sendBtn.innerText = "Готово";
                 });
