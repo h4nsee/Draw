@@ -209,7 +209,6 @@
             const chat_id = params.get('chat_id');
             const user_id = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "unknown";
 
-            // Таймаут на случай, если сервер молчит
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -234,7 +233,7 @@
                 })
                 .catch(err => {
                     clearTimeout(timeoutId);
-                    alert("Ошибка: " + err.message + "\nПроверь порт 8080 в Firewall!");
+                    alert("Ошибка сети. Убедитесь, что порт 8080 открыт.");
                     isSent = false;
                     sendBtn.innerText = "Готово";
                 });
