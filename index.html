@@ -6,6 +6,7 @@
     <title>Gartic Studio Ultra</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Стили остались без изменений */
         :root {
             --bg-color: #111111; --panel-color: #1c1c1e; --text-color: #ffffff;
             --accent-color: #8e44ad; --danger-color: #ff453a; --border-color: #38383a; --canvas-bg: #ffffff;
@@ -31,15 +32,9 @@
         .timer-container { position: relative; width: 40px; height: 40px; }
         .timer-svg { transform: rotate(-90deg); width: 40px; height: 40px; }
         .timer-bg { fill: none; stroke: var(--border-color); stroke-width: 3; }
-        .timer-progress { 
-            fill: none; stroke: var(--accent-color); stroke-width: 3; stroke-linecap: round; 
-            transition: stroke-dashoffset 1s linear; 
-        }
+        .timer-progress { fill: none; stroke: var(--accent-color); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
         .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 13px; font-weight: bold; }
-        #theme-btn {
-            width: 40px; height: 40px; background: none; border: 1px solid var(--border-color);
-            border-radius: 50%; color: var(--text-color); display: flex; align-items: center; justify-content: center;
-        }
+        #theme-btn { width: 40px; height: 40px; background: none; border: 1px solid var(--border-color); border-radius: 50%; color: var(--text-color); display: flex; align-items: center; justify-content: center; }
         .theme-icon { width: 20px; height: 20px; fill: currentColor; }
         #canvas-wrapper { flex-grow: 1; position: relative; background: var(--canvas-bg); margin: 10px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         canvas { display: block; touch-action: none; }
@@ -60,7 +55,6 @@
     </style>
 </head>
 <body>
-
     <div class="top-bar">
         <div class="task-wrapper">
             <div class="task-label">Рисуй:</div>
@@ -100,7 +94,6 @@
         const params = new URLSearchParams(window.location.search);
         let drawing = false, history = [], currentColor = '#000000', isSent = false, timerInterval;
 
-        // Тема
         function applyTheme(theme) {
             const sun = document.getElementById('sun-icon');
             const moon = document.getElementById('moon-icon');
@@ -114,13 +107,13 @@
                 tg.setHeaderColor('#1c1c1e');
             }
         }
+        
         document.getElementById('theme-btn').onclick = () => {
             const newTheme = document.body.classList.contains('light-theme') ? 'dark' : 'light';
             applyTheme(newTheme);
             localStorage.setItem('user_theme', newTheme);
         };
 
-        // Таймер
         function startTimer(seconds) {
             let timeLeft = seconds;
             const progress = document.getElementById('timer-progress');
@@ -134,7 +127,6 @@
             }, 1000);
         }
 
-        // Инициализация
         function init() {
             document.getElementById('task-text').innerText = params.get('task') || "Рисуй!";
             startTimer(parseInt(params.get('time')) || 60);
@@ -144,11 +136,12 @@
             const dpr = window.devicePixelRatio || 1;
             canvas.width = container.clientWidth * dpr; canvas.height = container.clientHeight * dpr;
             ctx.scale(dpr, dpr);
-            canvas.style.width = container.clientWidth + 'px'; canvas.style.height = container.clientHeight + 'px';
+            canvas.style.width = container.clientWidth + 'px';
+            canvas.style.height = container.clientHeight + 'px';
             ctx.lineCap = 'round'; ctx.lineJoin = 'round';
             ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             saveState();
-
+            
             const colors = ['#000000', '#7f7f7f', '#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#007aff', '#5856d6', '#8e44ad'];
             colors.forEach(c => {
                 const dot = document.createElement('div');
@@ -165,34 +158,34 @@
         function saveState() { if (history.length > 20) history.shift(); history.push(canvas.toDataURL()); }
         function undo() { 
             if (history.length > 1) { 
-                history.pop(); 
+                history.pop();
                 let img = new Image(); img.src = history[history.length-1];
                 img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0,canvas.width/(window.devicePixelRatio||1),canvas.height/(window.devicePixelRatio||1)); };
             } 
         }
 
         const getPos = (e) => { 
-            const rect = canvas.getBoundingClientRect(); 
+            const rect = canvas.getBoundingClientRect();
             const t = e.touches ? e.touches[0] : e; 
             return { x: t.clientX - rect.left, y: t.clientY - rect.top }; 
         };
-
+        
         canvas.addEventListener('touchstart', (e) => { 
             if(e.target.closest('.toolbar, .top-bar')) return;
             e.preventDefault(); drawing = true; ctx.beginPath(); 
             let p = getPos(e); ctx.moveTo(p.x, p.y); 
         }, {passive: false});
-
+        
         canvas.addEventListener('touchmove', (e) => { 
             if(!drawing) return; e.preventDefault(); 
             let p = getPos(e); ctx.strokeStyle = currentColor; ctx.lineWidth = document.getElementById('size-slider').value; 
             ctx.lineTo(p.x, p.y); ctx.stroke(); 
         }, {passive: false});
-
+        
         canvas.addEventListener('touchend', () => { if(drawing) saveState(); drawing = false; });
         function clearCanvas() { ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height); saveState(); }
 
-        // --- ГЛАВНОЕ ИЗМЕНЕНИЕ: ОТПРАВКА НА ТВОЙ СЕРВЕР ---
+        // --- ИЗМЕНЕНИЯ: HTTPS И ОБРАБОТКА ОШИБКИ ---
         function sendDrawing() {
             if (isSent) return;
             isSent = true;
@@ -201,21 +194,22 @@
             const sendBtn = document.getElementById('send-btn');
             sendBtn.innerText = "⏳...";
             sendBtn.disabled = true;
-
+            
             canvas.toBlob((blob) => {
                 const formData = new FormData();
                 formData.append('image', blob, 'drawing.png');
                 formData.append('user_id', tg.initDataUnsafe.user?.id || "unknown");
                 formData.append('chat_id', params.get('chat_id'));
 
-                fetch('http://gartickrizis.ru/upload', {
+                // ОБЯЗАТЕЛЬНО ИСПОЛЬЗУЕМ HTTPS
+                fetch('https://gartickrizis.ru/upload', {
                     method: 'POST',
                     body: formData,
                     mode: 'cors'
                 })
                 .then(res => { if(res.ok) tg.close(); else throw new Error(); })
                 .catch(err => {
-                    alert("Ошибка сервера! Проверь порт 8080.");
+                    alert("Ошибка: Сервер недоступен или не настроен HTTPS (SSL) на твоем домене gartickrizis.ru");
                     isSent = false;
                     sendBtn.innerText = "Готово";
                     sendBtn.disabled = false;
