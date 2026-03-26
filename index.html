@@ -6,7 +6,6 @@
     <title>Gartic Studio Ultra</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Стили остались без изменений */
         :root {
             --bg-color: #111111; --panel-color: #1c1c1e; --text-color: #ffffff;
             --accent-color: #8e44ad; --danger-color: #ff453a; --border-color: #38383a; --canvas-bg: #ffffff;
@@ -185,7 +184,7 @@
         canvas.addEventListener('touchend', () => { if(drawing) saveState(); drawing = false; });
         function clearCanvas() { ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height); saveState(); }
 
-        // --- ИЗМЕНЕНИЯ: HTTPS И ОБРАБОТКА ОШИБКИ ---
+        // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ: ПЕРЕДАЧА USER_ID И HTTPS ---
         function sendDrawing() {
             if (isSent) return;
             isSent = true;
@@ -198,18 +197,29 @@
             canvas.toBlob((blob) => {
                 const formData = new FormData();
                 formData.append('image', blob, 'drawing.png');
-                formData.append('user_id', tg.initDataUnsafe.user?.id || "unknown");
+                
+                // ПРИОРИТЕТ: берем user_id из ссылки (URL), так надежнее
+                const userIdFromUrl = params.get('user_id');
+                const userIdFromTg = tg.initDataUnsafe.user?.id;
+                
+                formData.append('user_id', userIdFromUrl || userIdFromTg || "unknown");
                 formData.append('chat_id', params.get('chat_id'));
 
-                // ОБЯЗАТЕЛЬНО ИСПОЛЬЗУЕМ HTTPS
+                // ОТПРАВЛЯЕМ ПО HTTPS
                 fetch('https://gartickrizis.ru/upload', {
                     method: 'POST',
                     body: formData,
                     mode: 'cors'
                 })
-                .then(res => { if(res.ok) tg.close(); else throw new Error(); })
+                .then(res => { 
+                    if(res.ok) {
+                        tg.close(); 
+                    } else {
+                        throw new Error("Ошибка сервера: " + res.status);
+                    }
+                })
                 .catch(err => {
-                    alert("Ошибка: Сервер недоступен или не настроен HTTPS (SSL) на твоем домене gartickrizis.ru");
+                    alert("Ошибка отправки! Убедись, что бот запущен на сервере, и Nginx настроен правильно.");
                     isSent = false;
                     sendBtn.innerText = "Готово";
                     sendBtn.disabled = false;
