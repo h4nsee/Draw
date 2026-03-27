@@ -98,6 +98,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.ready();
+        tg.enableClosingConfirmation();
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
