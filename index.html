@@ -38,19 +38,30 @@
         #canvas-wrapper { flex-grow: 1; position: relative; background: var(--canvas-bg); margin: 10px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         canvas { display: block; touch-action: none; }
         .toolbar { background: var(--panel-color); padding: 15px; border-top: 1px solid var(--border-color); padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
-        .palette { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 2px; }
-        .color-dot { width: 27px; height: 27px; border-radius: 50%; border: 2px solid transparent; flex-shrink: 0; }
+        .palette { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+        .palette::-webkit-scrollbar { display: none; }
+        .color-dot { width: 27px; height: 27px; border-radius: 50%; border: 2px solid transparent; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
         .color-dot.active { border-color: var(--text-color); transform: scale(1.15); }
         .size-row { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; color: #8e8e93; font-size: 13px; }
         input[type=range] { flex-grow: 1; -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-runnable-track { background: var(--border-color); height: 5px; border-radius: 3px; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: var(--accent-color); border-radius: 50%; margin-top: -8px; }
         .actions-row { display: flex; gap: 10px; }
-        button.action-btn { height: 48px; border-radius: 12px; border: none; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        button.action-btn { height: 48px; border-radius: 12px; border: none; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: opacity 0.2s; }
         #clear-btn, #undo-btn { width: 55px; background: var(--panel-color); color: var(--accent-color); border: 1px solid var(--border-color)!important; }
         #clear-btn { color: var(--danger-color); }
         .btn-send { flex-grow: 1; background: var(--accent-color); color: white; font-size: 16px; }
         .icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+        
+        /* Анимация загрузки */
+        .spinner {
+            width: 24px; height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -141,7 +152,12 @@
             ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             saveState();
             
-            const colors = ['#000000', '#7f7f7f', '#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#007aff', '#5856d6', '#8e44ad'];
+            // Расширенная палитра (включает коричневый, розовый, темно-зеленый, темно-синий, лиловый, белый как ластик и др.)
+            const colors = [
+                '#000000', '#7f7f7f', '#8B4513', '#ff3b30', '#FF69B4', '#ff9500', 
+                '#ffcc00', '#34c759', '#006400', '#008080', '#007aff', '#00008B', 
+                '#5856d6', '#8e44ad', '#c8a2c8', '#ffffff'
+            ];
             colors.forEach(c => {
                 const dot = document.createElement('div');
                 dot.className = 'color-dot'; dot.style.background = c;
@@ -184,28 +200,56 @@
         canvas.addEventListener('touchend', () => { if(drawing) saveState(); drawing = false; });
         function clearCanvas() { ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height); saveState(); }
 
-        // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ: ПЕРЕДАЧА USER_ID И HTTPS ---
+        // --- ФУНКЦИЯ СКРЫТОЙ ОТПРАВКИ (ПРИ ЗАКРЫТИИ) ---
+        function autoSend() {
+            if (isSent) return;
+            isSent = true;
+            
+            canvas.toBlob((blob) => {
+                const formData = new FormData();
+                formData.append('image', blob, 'drawing.png');
+                const userIdFromUrl = params.get('user_id');
+                const userIdFromTg = tg.initDataUnsafe.user?.id;
+                formData.append('user_id', userIdFromUrl || userIdFromTg || "unknown");
+                formData.append('chat_id', params.get('chat_id'));
+
+                // Используем keepalive, чтобы запрос ушел даже при закрытии вкладки
+                fetch('https://gartickrizis.ru/upload', {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'cors',
+                    keepalive: true 
+                }).catch(e => console.log("Фоновая отправка завершена:", e));
+            }, 'image/png');
+        }
+
+        // Отслеживаем закрытие/сворачивание
+        window.addEventListener('beforeunload', autoSend);
+        window.addEventListener('pagehide', autoSend);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') autoSend();
+        });
+
+        // --- ГЛАВНАЯ КНОПКА ОТПРАВКИ ---
         function sendDrawing() {
             if (isSent) return;
             isSent = true;
             clearInterval(timerInterval);
             
             const sendBtn = document.getElementById('send-btn');
-            sendBtn.innerText = "⏳...";
+            // Включаем анимацию загрузки
+            sendBtn.innerHTML = '<div class="spinner"></div>';
             sendBtn.disabled = true;
+            sendBtn.style.opacity = '0.7';
             
             canvas.toBlob((blob) => {
                 const formData = new FormData();
                 formData.append('image', blob, 'drawing.png');
-                
-                // ПРИОРИТЕТ: берем user_id из ссылки (URL), так надежнее
                 const userIdFromUrl = params.get('user_id');
                 const userIdFromTg = tg.initDataUnsafe.user?.id;
-                
                 formData.append('user_id', userIdFromUrl || userIdFromTg || "unknown");
                 formData.append('chat_id', params.get('chat_id'));
 
-                // ОТПРАВЛЯЕМ ПО HTTPS
                 fetch('https://gartickrizis.ru/upload', {
                     method: 'POST',
                     body: formData,
@@ -219,10 +263,11 @@
                     }
                 })
                 .catch(err => {
-                    alert("Ошибка отправки! Убедись, что бот запущен на сервере, и Nginx настроен правильно.");
+                    alert("Ошибка отправки! Убедись, что бот запущен на сервере.");
                     isSent = false;
                     sendBtn.innerText = "Готово";
                     sendBtn.disabled = false;
+                    sendBtn.style.opacity = '1';
                 });
             }, 'image/png');
         }
