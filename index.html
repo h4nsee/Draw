@@ -309,7 +309,7 @@
                 const userIdFromTg = tg.initDataUnsafe.user?.id;
                 formData.append('user_id', userIdFromUrl || userIdFromTg || "unknown");
                 formData.append('chat_id', params.get('chat_id'));
-                fetch('https://gartickrizis.ru/upload', {
+                fetch('https://krizisphone.fun/upload', {
                     method: 'POST',
                     body: formData,
                     mode: 'cors'
