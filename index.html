@@ -187,7 +187,7 @@
 
         function init() {
             document.getElementById('task-text').innerText = params.get('task') || "Рисуй!";
-            startTimer(parseInt(params.get('time')) || 60);
+            startTimer(parseInt(params.get('time')) || 120);
             applyTheme(localStorage.getItem('user_theme') || tg.colorScheme);
 
             const container = document.getElementById('canvas-wrapper');
