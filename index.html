@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gartic Studio Ultra</title>
+    <title>Krizis Phone Draw</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -31,97 +31,48 @@
             background-color: var(--panel-color); border-bottom: 1px solid var(--border-color);
             display: flex; align-items: center; justify-content: space-between; z-index: 10;
         }
-        .task-wrapper { flex-grow: 1; margin-right: 10px; overflow: hidden;
-        }
-        .task-label { font-size: 10px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
-        }
-        .task-text { font-size: 15px; font-weight: 600; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical; overflow: hidden; }
-        .top-controls { display: flex; align-items: center; gap: 10px;
-        flex-shrink: 0; }
-        .timer-container { position: relative; width: 40px; height: 40px;
-        }
-        .timer-svg { transform: rotate(-90deg); width: 40px; height: 40px;
-        }
-        .timer-bg { fill: none; stroke: var(--border-color); stroke-width: 3;
-        }
-        .timer-progress { fill: none; stroke: var(--accent-color); stroke-width: 3; stroke-linecap: round;
-        transition: stroke-dashoffset 1s linear; }
-        .timer-text { position: absolute; top: 50%; left: 50%;
-        transform: translate(-50%, -50%); font-size: 13px; font-weight: bold; }
-        #theme-btn { width: 40px;
-        height: 40px; background: none; border: 1px solid var(--border-color); border-radius: 50%; color: var(--text-color); display: flex; align-items: center; justify-content: center;
-        }
-        .theme-icon { width: 20px; height: 20px; fill: currentColor;
-        }
-        
-        #canvas-wrapper { flex-grow: 1;
-        position: relative; background: var(--canvas-bg); margin: 10px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        /* Убрана задержка transition для плавного зума без миганий */
+        .task-wrapper { flex-grow: 1; margin-right: 10px; overflow: hidden; }
+        .task-label { font-size: 10px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .task-text { font-size: 15px; font-weight: 600; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .top-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .timer-container { position: relative; width: 40px; height: 40px; }
+        .timer-svg { transform: rotate(-90deg); width: 40px; height: 40px; }
+        .timer-bg { fill: none; stroke: var(--border-color); stroke-width: 3; }
+        .timer-progress { fill: none; stroke: var(--accent-color); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+        .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 13px; font-weight: bold; }
+        #theme-btn { width: 40px; height: 40px; background: none; border: 1px solid var(--border-color); border-radius: 50%; color: var(--text-color); display: flex; align-items: center; justify-content: center; }
+        .theme-icon { width: 20px; height: 20px; fill: currentColor; }
+
+        #canvas-wrapper { flex-grow: 1; position: relative; background: var(--canvas-bg); margin: 10px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         canvas { display: block; touch-action: none; transform-origin: center; }
-        
-        .toolbar { background: var(--panel-color);
-        padding: 15px; border-top: 1px solid var(--border-color); padding-bottom: calc(15px + env(safe-area-inset-bottom)); position: relative;
-        }
-        
-        .tools-and-colors { display: flex;
-        align-items: center; gap: 12px; margin-bottom: 15px; position: relative; }
-        
-        .palette { display: flex;
-        gap: 8px; flex-grow: 1; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none;
-        }
-        .palette::-webkit-scrollbar { display: none;
-        }
-        .color-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent;
-        flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.1s;
-        }
-        .color-dot.active { border-color: var(--text-color); transform: scale(1.1);
-        }
-        
-        .divider { width: 2px;
-        height: 28px; background-color: var(--border-color); flex-shrink: 0; border-radius: 1px; }
-        
-        /* Выпадающее меню кистей */
+
+        .toolbar { background: var(--panel-color); padding: 15px; border-top: 1px solid var(--border-color); padding-bottom: calc(15px + env(safe-area-inset-bottom)); position: relative; }
+        .tools-and-colors { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; position: relative; }
+        .palette { display: flex; gap: 8px; flex-grow: 1; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+        .palette::-webkit-scrollbar { display: none; }
+        .color-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.1s; }
+        .color-dot.active { border-color: var(--text-color); transform: scale(1.1); }
+
+        .divider { width: 2px; height: 28px; background-color: var(--border-color); flex-shrink: 0; border-radius: 1px; }
         .brushes-selector { position: relative; flex-shrink: 0; }
-        .main-brush-btn { width: 40px; height: 40px; border-radius: 12px;
-        border: 2px solid var(--border-color); background-color: var(--tool-bg); color: var(--text-color); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;
-        }
-        .main-brush-btn.active { background-color: var(--tool-active); color: #fff; border-color: transparent;
-        }
-        
-        .brushes-menu { position: absolute;
-        bottom: 100%; right: 0; margin-bottom: 12px; background-color: var(--tool-menu-bg); border: 1px solid var(--border-color); border-radius: 16px; display: flex; flex-direction: column; gap: 6px;
-        padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); visibility: hidden; opacity: 0; transform: translateY(10px); transition: all 0.3s ease; z-index: 100;
-        max-height: 70vh; overflow-y: auto; scrollbar-width: none; }
+        .main-brush-btn { width: 40px; height: 40px; border-radius: 12px; border: 2px solid var(--border-color); background-color: var(--tool-bg); color: var(--text-color); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .main-brush-btn.active { background-color: var(--tool-active); color: #fff; border-color: transparent; }
+        .brushes-menu { position: absolute; bottom: 100%; right: 0; margin-bottom: 12px; background-color: var(--tool-menu-bg); border: 1px solid var(--border-color); border-radius: 16px; display: flex; flex-direction: column; gap: 6px; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); visibility: hidden; opacity: 0; transform: translateY(10px); transition: all 0.3s ease; z-index: 100; max-height: 70vh; overflow-y: auto; scrollbar-width: none; }
         .brushes-menu::-webkit-scrollbar { display: none; }
         .brushes-menu.open { visibility: visible; opacity: 1; transform: translateY(0); }
-        
-        .tool-btn { width: 38px;
-        height: 38px; border-radius: 10px; border: none; background-color: transparent; color: var(--text-color); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer;
-        transition: background 0.2s; }
+        .tool-btn { width: 38px; height: 38px; border-radius: 10px; border: none; background-color: transparent; color: var(--text-color); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
         .tool-btn.active { background-color: var(--tool-active); color: #fff; }
-
-        /* Единый стиль для новых иконок (контурные) */
-        .main-brush-btn svg, .tool-btn svg { 
-            width: 22px; height: 22px; fill: none; stroke: currentColor; 
-            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; 
-        }
-
+        .main-brush-btn svg, .tool-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .size-row { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; color: #8e8e93; font-size: 13px; }
         input[type=range] { flex-grow: 1; -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-runnable-track { background: var(--border-color); height: 5px; border-radius: 3px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: var(--accent-color); border-radius: 50%;
-        margin-top: -8px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-        
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: var(--accent-color); border-radius: 50%; margin-top: -8px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
         .actions-row { display: flex; gap: 10px; }
-        button.action-btn { height: 48px; border-radius: 12px; border: none; font-weight: 600;
-        display: flex; align-items: center; justify-content: center; cursor: pointer; transition: opacity 0.2s; }
+        button.action-btn { height: 48px; border-radius: 12px; border: none; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: opacity 0.2s; }
         #clear-btn, #undo-btn { width: 55px; background: var(--panel-color); color: var(--accent-color); border: 1px solid var(--border-color)!important; }
         #clear-btn { color: var(--danger-color); }
         .btn-send { flex-grow: 1; background: var(--accent-color); color: white; font-size: 16px; }
         .icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-        
         .spinner { width: 24px; height: 24px; border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #ffffff; animation: spin 1s ease-in-out infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -150,10 +101,10 @@
         <div class="tools-and-colors">
             <div class="palette" id="palette"></div>
             <div class="divider"></div>
-            
+
             <div class="brushes-selector">
-                <button class="main-brush-btn" id="main-brush-btn">
-                    <svg id="main-brush-icon" viewBox="0 0 24 24"></svg> 
+                <button class="main-brush-btn active" id="main-brush-btn">
+                    <svg id="main-brush-icon" viewBox="0 0 24 24"></svg>
                 </button>
                 <div class="brushes-menu" id="brushes-menu">
                     <button class="tool-btn active" data-tool="brush" title="Кисть">
@@ -165,8 +116,8 @@
                     <button class="tool-btn" data-tool="spray" title="Баллончик">
                         <svg viewBox="0 0 24 24"><path d="M8 8h8v14a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V8Z"/><path d="M10 2h4v4h-4z"/><circle cx="12" cy="14" r="1.5"/><path d="M16 6h2"/><path d="M15 4h1"/><path d="M17 8h2"/><path d="M7 6H5"/><path d="M8 4H7"/><path d="M7 8H5"/></svg>
                     </button>
-                    <button class="tool-btn eraser-btn" data-tool="eraser" title="Ластик">
-                        <svg viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+                    <button class="tool-btn" data-tool="eraser" title="Ластик">
+                        <svg viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 2.5 1 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
                     </button>
                     <button class="tool-btn" data-tool="fill" title="Заливка">
                         <svg viewBox="0 0 24 24"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/></svg>
@@ -180,7 +131,7 @@
                 </div>
             </div>
         </div>
-       
+
         <div class="size-row"><span>тонко</span><input type="range" id="size-slider" min="2" max="35" value="7"><span>толсто</span></div>
         <div class="actions-row">
             <button class="action-btn" id="clear-btn" onclick="clearCanvas()"><svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
@@ -195,15 +146,15 @@
         tg.ready();
         tg.enableClosingConfirmation();
 
+        const params = new URLSearchParams(window.location.search);
+        const uploadUrl = params.get('upload_url') || 'https://krizisphone.fun/upload';
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const params = new URLSearchParams(window.location.search);
         let drawing = false, history = [], currentColor = '#000000', currentTool = 'brush';
         let isSent = false, timerInterval;
         let startX = 0, startY = 0, hasMoved = false, savedImageData = null;
         const DEFAULT_BG_COLOR = "#ffffff";
-        
-        // Переменные для зума (обновленная логика)
+
         let currentScale = 1;
         let translateX = 0, translateY = 0;
         let initialPinchDistance = null;
@@ -215,15 +166,17 @@
             const moon = document.getElementById('moon-icon');
             if (theme === 'light') {
                 document.body.classList.add('light-theme');
-                sun.style.display = 'none'; moon.style.display = 'block';
+                sun.style.display = 'none';
+                moon.style.display = 'block';
                 tg.setHeaderColor('#ffffff');
             } else {
                 document.body.classList.remove('light-theme');
-                sun.style.display = 'block'; moon.style.display = 'none';
+                sun.style.display = 'block';
+                moon.style.display = 'none';
                 tg.setHeaderColor('#1c1c1e');
             }
         }
-        
+
         document.getElementById('theme-btn').onclick = () => {
             const newTheme = document.body.classList.contains('light-theme') ? 'dark' : 'light';
             applyTheme(newTheme);
@@ -235,10 +188,15 @@
             const progress = document.getElementById('timer-progress');
             const circ = 2 * Math.PI * 17;
             progress.style.strokeDasharray = circ;
+            document.getElementById('timer-num').innerText = timeLeft;
             timerInterval = setInterval(() => {
-                document.getElementById('timer-num').innerText = timeLeft;
-                progress.style.strokeDashoffset = ((seconds - timeLeft + 1) / seconds) * circ;
-                if (timeLeft <= 0) { clearInterval(timerInterval); sendDrawing(); }
+                document.getElementById('timer-num').innerText = Math.max(timeLeft, 0);
+                progress.style.strokeDashoffset = ((seconds - Math.max(timeLeft, 0)) / seconds) * circ;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    sendDrawing();
+                    return;
+                }
                 timeLeft--;
             }, 1000);
         }
@@ -247,7 +205,7 @@
             const mainBtn = document.getElementById('main-brush-btn');
             const menu = document.getElementById('brushes-menu');
             const mainIcon = document.getElementById('main-brush-icon');
-            
+
             const firstToolBtn = menu.querySelector('.tool-btn.active');
             mainIcon.innerHTML = firstToolBtn.querySelector('svg').innerHTML;
             currentTool = firstToolBtn.dataset.tool;
@@ -262,11 +220,10 @@
                     e.stopPropagation();
                     menu.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    
+
                     currentTool = btn.dataset.tool;
                     mainIcon.innerHTML = btn.querySelector('svg').innerHTML;
-                    
-                    if(['fill','circle','rect'].includes(currentTool)) {
+                    if (['fill', 'circle', 'rect'].includes(currentTool)) {
                         mainBtn.classList.remove('active');
                     } else {
                         mainBtn.classList.add('active');
@@ -276,58 +233,64 @@
             });
 
             document.addEventListener('click', () => {
-                if(menu.classList.contains('open')) menu.classList.remove('open');
+                if (menu.classList.contains('open')) menu.classList.remove('open');
             });
         }
 
         function init() {
-            document.getElementById('task-text').innerText = params.get('task') || "Рисуй!";
-            startTimer(parseInt(params.get('time')) || 60);
-            applyTheme(localStorage.getItem('user_theme') || tg.colorScheme);
+            document.getElementById('task-text').innerText = params.get('task') || 'Рисуй!';
+            startTimer(parseInt(params.get('time') || '60', 10));
+            applyTheme(localStorage.getItem('user_theme') || tg.colorScheme || 'dark');
 
             const container = document.getElementById('canvas-wrapper');
             const dpr = window.devicePixelRatio || 1;
-            canvas.width = container.clientWidth * dpr; canvas.height = container.clientHeight * dpr;
+            canvas.width = container.clientWidth * dpr;
+            canvas.height = container.clientHeight * dpr;
             ctx.scale(dpr, dpr);
             canvas.style.width = container.clientWidth + 'px';
             canvas.style.height = container.clientHeight + 'px';
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             ctx.fillStyle = DEFAULT_BG_COLOR;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             saveState();
-            
+
             const colors = [
-                '#000000', '#7f7f7f', '#8B4513', '#ff3b30', '#FF69B4', '#ff9500', 
-                '#ffcc00', '#34c759', '#006400', '#008080', '#007aff', '#00008B', 
+                '#000000', '#7f7f7f', '#8B4513', '#ff3b30', '#FF69B4', '#ff9500',
+                '#ffcc00', '#34c759', '#006400', '#008080', '#007aff', '#00008B',
                 '#5856d6', '#8e44ad', '#c8a2c8', '#ffffff'
             ];
             colors.forEach(c => {
                 const dot = document.createElement('div');
-                dot.className = 'color-dot'; dot.style.background = c;
-                if(c === currentColor) dot.classList.add('active');
+                dot.className = 'color-dot';
+                dot.style.background = c;
+                if (c === currentColor) dot.classList.add('active');
                 dot.onclick = () => {
                     document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-                    dot.classList.add('active'); currentColor = c;
+                    dot.classList.add('active');
+                    currentColor = c;
                 };
                 document.getElementById('palette').appendChild(dot);
             });
+
             initBrushesSelector();
         }
 
-        function saveState() { 
+        function saveState() {
             if (history.length > 20) history.shift();
             history.push(canvas.toDataURL());
         }
 
-        function undo() { 
-            if (history.length > 1) { 
+        function undo() {
+            if (history.length > 1) {
                 history.pop();
-                let img = new Image(); img.src = history[history.length-1];
-                img.onload = () => { 
-                    ctx.clearRect(0,0,canvas.width,canvas.height);
-                    ctx.drawImage(img,0,0,canvas.width/(window.devicePixelRatio||1),canvas.height/(window.devicePixelRatio||1)); 
+                let img = new Image();
+                img.src = history[history.length - 1];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
                 };
-            } 
+            }
         }
 
         function floodFill(x, y, fillColor) {
@@ -336,81 +299,98 @@
             const h = canvas.height;
             const px = Math.floor(x * dpr);
             const py = Math.floor(y * dpr);
-            
+
             const imageData = ctx.getImageData(0, 0, w, h);
             const data = imageData.data;
             const stack = [[px, py]];
-            
+
             const hex = fillColor.replace('#', '');
-            const r = parseInt(hex.substring(0,2), 16);
-            const g = parseInt(hex.substring(2,4), 16);
-            const b = parseInt(hex.substring(4,6), 16);
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+
             const startPos = (py * w + px) * 4;
             const startR = data[startPos];
-            const startG = data[startPos+1];
-            const startB = data[startPos+2];
+            const startG = data[startPos + 1];
+            const startB = data[startPos + 2];
 
             if (r === startR && g === startG && b === startB) return;
+
             const colorPixel = (pos) => {
                 data[pos] = r;
-                data[pos+1] = g; data[pos+2] = b; data[pos+3] = 255;
-            };
-            const matchStartColor = (pos) => {
-                return data[pos] === startR && data[pos+1] === startG && data[pos+2] === startB;
+                data[pos + 1] = g;
+                data[pos + 2] = b;
+                data[pos + 3] = 255;
             };
 
-            while(stack.length) {
+            const matchStartColor = (pos) => data[pos] === startR && data[pos + 1] === startG && data[pos + 2] === startB;
+
+            while (stack.length) {
                 let [cx, cy] = stack.pop();
                 let currentPos = (cy * w + cx) * 4;
-                while(cy >= 0 && matchStartColor(currentPos)) {
+
+                while (cy >= 0 && matchStartColor(currentPos)) {
                     cy--;
                     currentPos -= w * 4;
                 }
                 cy++;
                 currentPos += w * 4;
-                
+
                 let reachLeft = false, reachRight = false;
-                while(cy < h && matchStartColor(currentPos)) {
+                while (cy < h && matchStartColor(currentPos)) {
                     colorPixel(currentPos);
-                    if(cx > 0) {
-                        if(matchStartColor(currentPos - 4)) {
-                            if(!reachLeft) { stack.push([cx - 1, cy]);
-                            reachLeft = true; }
-                        } else if(reachLeft) { reachLeft = false; }
+
+                    if (cx > 0) {
+                        if (matchStartColor(currentPos - 4)) {
+                            if (!reachLeft) {
+                                stack.push([cx - 1, cy]);
+                                reachLeft = true;
+                            }
+                        } else {
+                            reachLeft = false;
+                        }
                     }
-                    
-                    if(cx < w - 1) {
-                        if(matchStartColor(currentPos + 4)) {
-                            if(!reachRight) { stack.push([cx + 1, cy]);
-                            reachRight = true; }
-                        } else if(reachRight) { reachRight = false; }
+
+                    if (cx < w - 1) {
+                        if (matchStartColor(currentPos + 4)) {
+                            if (!reachRight) {
+                                stack.push([cx + 1, cy]);
+                                reachRight = true;
+                            }
+                        } else {
+                            reachRight = false;
+                        }
                     }
                     cy++;
                     currentPos += w * 4;
                 }
             }
+
             ctx.putImageData(imageData, 0, 0);
         }
 
-        const getPos = (e) => { 
+        const getPos = (e) => {
             const rect = canvas.getBoundingClientRect();
-            const t = e.touches ? e.touches[0] : e; 
+            const t = e.touches ? e.touches[0] : e;
             const dpr = window.devicePixelRatio || 1;
             const scaleX = canvas.width / (rect.width * dpr);
             const scaleY = canvas.height / (rect.height * dpr);
             return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
         };
 
-        canvas.addEventListener('touchstart', (e) => { 
-            if(e.target.closest('.toolbar, .top-bar')) return;
-            e.preventDefault(); 
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
 
             if (e.touches.length === 2) {
                 drawing = false;
-                initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                initialPinchCenter = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
-                
-                // Фиксируем состояния для плавного вычисления дельты
+                initialPinchDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                initialPinchCenter = {
+                    x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+                    y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+                };
                 startScale = currentScale;
                 startTranslateX = translateX;
                 startTranslateY = translateY;
@@ -418,15 +398,17 @@
             }
 
             if (e.touches.length === 1) {
-                drawing = true; hasMoved = false;
-                let p = getPos(e); 
-                startX = p.x; startY = p.y;
-                const activeLineWidth = document.getElementById('size-slider').value;
-                ctx.lineWidth = activeLineWidth;
+                drawing = true;
+                hasMoved = false;
+                let p = getPos(e);
+                startX = p.x;
+                startY = p.y;
+
+                ctx.lineWidth = document.getElementById('size-slider').value;
                 ctx.globalAlpha = currentTool === 'marker' ? 0.3 : 1.0;
                 ctx.fillStyle = currentTool === 'eraser' ? DEFAULT_BG_COLOR : currentColor;
                 ctx.strokeStyle = currentTool === 'eraser' ? DEFAULT_BG_COLOR : currentColor;
-                
+
                 if (currentTool === 'fill') {
                     floodFill(p.x, p.y, currentColor);
                     saveState();
@@ -435,39 +417,46 @@
                     savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 } else {
                     ctx.beginPath();
-                    ctx.moveTo(p.x, p.y); 
+                    ctx.moveTo(p.x, p.y);
                 }
             }
-        }, {passive: false});
+        }, { passive: false });
 
-        canvas.addEventListener('touchmove', (e) => { 
-            e.preventDefault(); 
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
 
             if (e.touches.length === 2 && initialPinchDistance) {
-                const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                const currentCenter = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
-                
+                const currentDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const currentCenter = {
+                    x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+                    y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+                };
+
                 const deltaScale = currentDistance / initialPinchDistance;
-                
-                // Ограничение зума от x1 до x4
                 currentScale = Math.max(1, Math.min(startScale * deltaScale, 4));
-                
+
                 translateX = startTranslateX + (currentCenter.x - initialPinchCenter.x);
                 translateY = startTranslateY + (currentCenter.y - initialPinchCenter.y);
-                
-                if (currentScale === 1) { translateX = 0; translateY = 0; }
-                
+
+                if (currentScale === 1) {
+                    translateX = 0;
+                    translateY = 0;
+                }
+
                 canvas.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
                 return;
             }
 
-            if(drawing && e.touches.length === 1) { 
+            if (drawing && e.touches.length === 1) {
                 hasMoved = true;
                 let p = getPos(e);
-                
+
                 if (currentTool === 'brush' || currentTool === 'marker' || currentTool === 'eraser') {
                     ctx.lineTo(p.x, p.y);
-                    ctx.stroke(); 
+                    ctx.stroke();
                 } else if (currentTool === 'spray') {
                     for (let i = 0; i < 10; i++) {
                         let offsetX = (Math.random() - 0.5) * ctx.lineWidth * 2;
@@ -485,13 +474,15 @@
                     ctx.stroke();
                 }
             }
-        }, {passive: false});
+        }, { passive: false });
 
-        canvas.addEventListener('touchend', (e) => { 
+        canvas.addEventListener('touchend', (e) => {
             if (e.touches.length < 2) {
-                initialPinchDistance = null; initialPinchCenter = null;
+                initialPinchDistance = null;
+                initialPinchCenter = null;
             }
-            if(drawing && e.touches.length === 0) { 
+
+            if (drawing && e.touches.length === 0) {
                 if (!hasMoved && ['brush', 'marker', 'spray', 'eraser'].includes(currentTool)) {
                     ctx.globalAlpha = currentTool === 'marker' ? 0.3 : 1.0;
                     ctx.fillStyle = currentTool === 'eraser' ? DEFAULT_BG_COLOR : currentColor;
@@ -499,64 +490,79 @@
                     ctx.arc(startX, startY, document.getElementById('size-slider').value / 2, 0, Math.PI * 2);
                     ctx.fill();
                 }
-                ctx.globalAlpha = 1.0; 
-                saveState(); 
-                drawing = false; 
+                ctx.globalAlpha = 1.0;
+                saveState();
+                drawing = false;
             }
         });
 
-        function clearCanvas() { ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height); saveState(); }
+        function clearCanvas() {
+            ctx.fillStyle = DEFAULT_BG_COLOR;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            saveState();
+        }
+
+        function buildFormData(blob) {
+            const formData = new FormData();
+            formData.append('image', blob, 'drawing.png');
+            formData.append('user_id', params.get('user_id') || tg.initDataUnsafe.user?.id || 'unknown');
+            formData.append('chat_id', params.get('chat_id') || '');
+            formData.append('init_data', tg.initData || '');
+            return formData;
+        }
+
+        function sendBlob(blob, keepalive = false) {
+            return fetch(uploadUrl, {
+                method: 'POST',
+                body: buildFormData(blob),
+                mode: 'cors',
+                keepalive
+            });
+        }
 
         function autoSend() {
             if (isSent) return;
             isSent = true;
             canvas.toBlob((blob) => {
-                const formData = new FormData();
-                formData.append('image', blob, 'drawing.png');
-                const userIdFromUrl = params.get('user_id');
-                const userIdFromTg = tg.initDataUnsafe.user?.id;
-                formData.append('user_id', userIdFromUrl || userIdFromTg || "unknown");
-                formData.append('chat_id', params.get('chat_id'));
-                fetch('https://gartickrizis.ru/upload', {
-                    method: 'POST', body: formData, mode: 'cors', keepalive: true 
-                }).catch(e => console.log("Фоновая отправка завершена:", e));
+                sendBlob(blob, true).catch((e) => console.log('Фоновая отправка:', e));
             }, 'image/png');
         }
 
         window.addEventListener('beforeunload', autoSend);
         window.addEventListener('pagehide', autoSend);
-        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') autoSend(); });
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') autoSend();
+        });
 
         function sendDrawing() {
             if (isSent) return;
             isSent = true;
             clearInterval(timerInterval);
+
             const sendBtn = document.getElementById('send-btn');
             sendBtn.innerHTML = '<div class="spinner"></div>';
-            sendBtn.disabled = true; sendBtn.style.opacity = '0.7';
+            sendBtn.disabled = true;
+            sendBtn.style.opacity = '0.7';
+
             canvas.toBlob((blob) => {
-                const formData = new FormData();
-                formData.append('image', blob, 'drawing.png');
-                const userIdFromUrl = params.get('user_id');
-                const userIdFromTg = tg.initDataUnsafe.user?.id;
-                formData.append('user_id', userIdFromUrl || userIdFromTg || "unknown");
-                formData.append('chat_id', params.get('chat_id'));
-                
-                fetch('https://krizisphone.fun/upload', {
-                    method: 'POST', body: formData, mode: 'cors'
-                })
-                .then(res => { 
-                    if(res.ok) { tg.close(); } else { throw new Error("Ошибка сервера: " + res.status); }
-                })
-                .catch(err => {
-                    alert("Ошибка отправки! Убедись, что бот запущен на сервере.");
-                    isSent = false;
-                    sendBtn.innerText = "Готово";
-                    sendBtn.disabled = false;
-                    sendBtn.style.opacity = '1';
-                });
+                sendBlob(blob, false)
+                    .then((res) => {
+                        if (res.ok) {
+                            tg.close();
+                        } else {
+                            throw new Error('Ошибка сервера: ' + res.status);
+                        }
+                    })
+                    .catch(() => {
+                        alert('Ошибка отправки! Проверь, что сервер бота доступен.');
+                        isSent = false;
+                        sendBtn.innerText = 'Готово';
+                        sendBtn.disabled = false;
+                        sendBtn.style.opacity = '1';
+                    });
             }, 'image/png');
         }
+
         init();
     </script>
 </body>
