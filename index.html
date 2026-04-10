@@ -43,8 +43,8 @@
         #theme-btn { width: 40px; height: 40px; background: none; border: 1px solid var(--border-color); border-radius: 50%; color: var(--text-color); display: flex; align-items: center; justify-content: center; }
         .theme-icon { width: 20px; height: 20px; fill: currentColor; }
 
-        #canvas-wrapper { flex-grow: 1; position: relative; background: var(--canvas-bg); margin: 10px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        canvas { display: block; touch-action: none; transform-origin: center; }
+        #canvas-wrapper { flex-grow: 1; position: relative; background: var(--canvas-bg); margin: 10px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 2px solid var(--border-color); box-sizing: border-box; }
+        canvas { display: block; touch-action: none; transform-origin: center; background-color: var(--canvas-bg); outline: 2px solid var(--accent-color); }
 
         .toolbar { background: var(--panel-color); padding: 15px; border-top: 1px solid var(--border-color); padding-bottom: calc(15px + env(safe-area-inset-bottom)); position: relative; }
         .tools-and-colors { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; position: relative; }
@@ -69,7 +69,7 @@
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: var(--accent-color); border-radius: 50%; margin-top: -8px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
         .actions-row { display: flex; gap: 10px; }
         button.action-btn { height: 48px; border-radius: 12px; border: none; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: opacity 0.2s; }
-        #clear-btn, #undo-btn { width: 55px; background: var(--panel-color); color: var(--accent-color); border: 1px solid var(--border-color)!important; }
+        #clear-btn, #undo-btn, #redo-btn { width: 55px; background: var(--panel-color); color: var(--accent-color); border: 1px solid var(--border-color)!important; }
         #clear-btn { color: var(--danger-color); }
         .btn-send { flex-grow: 1; background: var(--accent-color); color: white; font-size: 16px; }
         .icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -136,6 +136,7 @@
         <div class="actions-row">
             <button class="action-btn" id="clear-btn" onclick="clearCanvas()"><svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
             <button class="action-btn" id="undo-btn" onclick="undo()"><svg class="icon" viewBox="0 0 24 24"><path d="M3 10h10a5 5 0 0 1 5 5 5 5 0 0 1-5 5H3m4-6-4-4 4-4"/></svg></button>
+            <button class="action-btn" id="redo-btn" onclick="redo()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 10H11a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10m-4-6 4-4-4-4"/></svg></button>
             <button class="action-btn btn-send" id="send-btn" onclick="sendDrawing()">Готово</button>
         </div>
     </div>
@@ -150,7 +151,7 @@
         const uploadUrl = params.get('upload_url') || 'https://krizisphone.fun/upload';
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        let drawing = false, history = [], currentColor = '#000000', currentTool = 'brush';
+        let drawing = false, history = [], redoHistory = [], currentColor = '#000000', currentTool = 'brush';
         let isSent = false, timerInterval;
         let startX = 0, startY = 0, hasMoved = false, savedImageData = null;
         const DEFAULT_BG_COLOR = "#ffffff";
@@ -256,9 +257,10 @@
             saveState();
 
             const colors = [
-                '#000000', '#7f7f7f', '#8B4513', '#ff3b30', '#FF69B4', '#ff9500',
-                '#ffcc00', '#34c759', '#006400', '#008080', '#007aff', '#00008B',
-                '#5856d6', '#8e44ad', '#c8a2c8', '#ffffff'
+                '#000000', '#7f7f7f', '#8B4513', '#F5F5DC', '#E8BEAC',
+                '#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#006400',
+                '#008080', '#007aff', '#00008B', '#5856d6', '#8e44ad',
+                '#c8a2c8', '#FF69B4', '#ffffff'
             ];
             colors.forEach(c => {
                 const dot = document.createElement('div');
@@ -279,13 +281,27 @@
         function saveState() {
             if (history.length > 20) history.shift();
             history.push(canvas.toDataURL());
+            redoHistory = [];
         }
 
         function undo() {
             if (history.length > 1) {
-                history.pop();
+                redoHistory.push(history.pop());
                 let img = new Image();
                 img.src = history[history.length - 1];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
+                };
+            }
+        }
+
+        function redo() {
+            if (redoHistory.length > 0) {
+                const data = redoHistory.pop();
+                history.push(data);
+                let img = new Image();
+                img.src = data;
                 img.onload = () => {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(img, 0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
