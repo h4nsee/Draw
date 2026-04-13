@@ -8,49 +8,28 @@
     <style>
         :root {
             --bg-color: #111111;
-            --panel-color: #1c1c1e;
-            --text-color: #ffffff;
-            --accent-color: #8e44ad;
-            --danger-color: #ff453a;
-            --border-color: #38383a;
-            --canvas-bg: #ffffff;
-            --tool-bg: #2c2c2e;
-            --tool-active: #8e44ad;
-            --tool-menu-bg: #222224;
+            --panel-color: #1c1c1e; --text-color: #ffffff;
+            --accent-color: #8e44ad; --danger-color: #ff453a; --border-color: #38383a; --canvas-bg: #ffffff;
+            --tool-bg: #2c2c2e; --tool-active: #8e44ad; --tool-menu-bg: #222224;
         }
         body.light-theme {
             --bg-color: #f4f4f9;
-            --panel-color: #ffffff;
-            --text-color: #000000;
-            --border-color: #d1d1d6;
-            --canvas-bg: #ffffff;
-            --tool-bg: #e5e5ea;
-            --tool-active: #8e44ad;
-            --tool-menu-bg: #f9f9fc;
+            --panel-color: #ffffff; --text-color: #000000;
+            --border-color: #d1d1d6; --canvas-bg: #ffffff;
+            --tool-bg: #e5e5ea; --tool-active: #8e44ad; --tool-menu-bg: #f9f9fc;
         }
         body {
             margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: -apple-system, system-ui, sans-serif;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
+            padding: 0; background-color: var(--bg-color); color: var(--text-color);
+            font-family: -apple-system, system-ui, sans-serif; display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden; touch-action: none;
+            -webkit-user-select: none; user-select: none;
             transition: background 0.3s, color 0.3s;
         }
         .top-bar {
             padding: 10px 16px;
-            background-color: var(--panel-color);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            z-index: 10;
+            background-color: var(--panel-color); border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between; z-index: 10;
         }
         .task-wrapper { flex-grow: 1; margin-right: 10px; overflow: hidden; }
         .task-label { font-size: 10px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
@@ -64,37 +43,16 @@
         #theme-btn { width: 40px; height: 40px; background: none; border: 1px solid var(--border-color); border-radius: 50%; color: var(--text-color); display: flex; align-items: center; justify-content: center; }
         .theme-icon { width: 20px; height: 20px; fill: currentColor; }
 
-        #canvas-wrapper {
-            flex-grow: 1;
-            position: relative;
-            background: var(--canvas-bg);
-            margin: 10px;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            border: 2px solid var(--border-color);
-            box-sizing: border-box;
-        }
-        canvas {
-            display: block;
-            touch-action: none;
-            transform-origin: center;
-            background-color: var(--canvas-bg);
-            outline: 2px solid var(--accent-color);
-        }
+        #canvas-wrapper { flex-grow: 1; position: relative; background: var(--canvas-bg); margin: 10px; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 2px solid var(--border-color); box-sizing: border-box; }
+        canvas { display: block; touch-action: none; transform-origin: center; background-color: var(--canvas-bg); outline: 2px solid var(--accent-color); }
 
-        .toolbar {
-            background: var(--panel-color);
-            padding: 15px;
-            border-top: 1px solid var(--border-color);
-            padding-bottom: calc(15px + env(safe-area-inset-bottom));
-            position: relative;
-        }
+        .toolbar { background: var(--panel-color); padding: 15px; border-top: 1px solid var(--border-color); padding-bottom: calc(15px + env(safe-area-inset-bottom)); position: relative; }
         .tools-and-colors { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; position: relative; }
         .palette { display: flex; gap: 8px; flex-grow: 1; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
         .palette::-webkit-scrollbar { display: none; }
         .color-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.1s; }
         .color-dot.active { border-color: var(--text-color); transform: scale(1.1); }
+
         .divider { width: 2px; height: 28px; background-color: var(--border-color); flex-shrink: 0; border-radius: 1px; }
         .brushes-selector { position: relative; flex-shrink: 0; }
         .main-brush-btn { width: 40px; height: 40px; border-radius: 12px; border: 2px solid var(--border-color); background-color: var(--tool-bg); color: var(--text-color); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
@@ -116,24 +74,6 @@
         .btn-send { flex-grow: 1; background: var(--accent-color); color: white; font-size: 16px; }
         .icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
         .spinner { width: 24px; height: 24px; border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #ffffff; animation: spin 1s ease-in-out infinite; }
-        .debug-bar {
-            position: absolute;
-            left: 12px;
-            right: 12px;
-            bottom: 12px;
-            background: rgba(0, 0, 0, 0.78);
-            color: #fff;
-            border-radius: 12px;
-            padding: 10px 12px;
-            font-size: 12px;
-            line-height: 1.35;
-            z-index: 999;
-            display: none;
-            white-space: pre-wrap;
-            word-break: break-word;
-            max-height: 40vh;
-            overflow: auto;
-        }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -155,15 +95,13 @@
         </div>
     </div>
 
-    <div id="canvas-wrapper">
-        <canvas id="canvas"></canvas>
-        <div id="debug-bar" class="debug-bar"></div>
-    </div>
+    <div id="canvas-wrapper"><canvas id="canvas"></canvas></div>
 
     <div class="toolbar">
         <div class="tools-and-colors">
             <div class="palette" id="palette"></div>
             <div class="divider"></div>
+
             <div class="brushes-selector">
                 <button class="main-brush-btn active" id="main-brush-btn">
                     <svg id="main-brush-icon" viewBox="0 0 24 24"></svg>
@@ -213,54 +151,16 @@
         const uploadUrl = params.get('upload_url') || 'https://krizisphone.fun/upload';
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const debugBar = document.getElementById('debug-bar');
-
-        let drawing = false;
-        let history = [];
-        let redoHistory = [];
-        let currentColor = '#000000';
-        let currentTool = 'brush';
-        let isSent = false;
-        let timerInterval;
-        let startX = 0;
-        let startY = 0;
-        let hasMoved = false;
-        let savedImageData = null;
-        const DEFAULT_BG_COLOR = '#ffffff';
+        let drawing = false, history = [], redoHistory = [], currentColor = '#000000', currentTool = 'brush';
+        let isSent = false, timerInterval;
+        let startX = 0, startY = 0, hasMoved = false, savedImageData = null;
+        const DEFAULT_BG_COLOR = "#ffffff";
 
         let currentScale = 1;
-        let translateX = 0;
-        let translateY = 0;
+        let translateX = 0, translateY = 0;
         let initialPinchDistance = null;
         let initialPinchCenter = null;
-        let startScale = 1;
-        let startTranslateX = 0;
-        let startTranslateY = 0;
-        let activePointerId = null;
-
-        function debugLog(...parts) {
-            const line = parts.map((part) => {
-                if (typeof part === 'string') return part;
-                try {
-                    return JSON.stringify(part);
-                } catch {
-                    return String(part);
-                }
-            }).join(' ');
-
-            console.log('[DRAW]', ...parts);
-            debugBar.style.display = 'block';
-            debugBar.textContent += `${new Date().toLocaleTimeString()}  ${line}\n`;
-            debugBar.scrollTop = debugBar.scrollHeight;
-        }
-
-        window.addEventListener('error', (event) => {
-            debugLog('JS ERROR:', event.message, 'at', `${event.filename}:${event.lineno}:${event.colno}`);
-        });
-
-        window.addEventListener('unhandledrejection', (event) => {
-            debugLog('PROMISE ERROR:', event.reason?.message || String(event.reason));
-        });
+        let startScale = 1, startTranslateX = 0, startTranslateY = 0;
 
         function applyTheme(theme) {
             const sun = document.getElementById('sun-icon');
@@ -295,7 +195,6 @@
                 progress.style.strokeDashoffset = ((seconds - Math.max(timeLeft, 0)) / seconds) * circ;
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    debugLog('Таймер истёк, автоотправка');
                     sendDrawing();
                     return;
                 }
@@ -317,11 +216,12 @@
                 menu.classList.toggle('open');
             };
 
-            menu.querySelectorAll('.tool-btn').forEach((btn) => {
+            menu.querySelectorAll('.tool-btn').forEach(btn => {
                 btn.onclick = (e) => {
                     e.stopPropagation();
-                    menu.querySelectorAll('.tool-btn').forEach((b) => b.classList.remove('active'));
+                    menu.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
+
                     currentTool = btn.dataset.tool;
                     mainIcon.innerHTML = btn.querySelector('svg').innerHTML;
                     if (['fill', 'circle', 'rect'].includes(currentTool)) {
@@ -348,8 +248,8 @@
             canvas.width = container.clientWidth * dpr;
             canvas.height = container.clientHeight * dpr;
             ctx.scale(dpr, dpr);
-            canvas.style.width = `${container.clientWidth}px`;
-            canvas.style.height = `${container.clientHeight}px`;
+            canvas.style.width = container.clientWidth + 'px';
+            canvas.style.height = container.clientHeight + 'px';
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.fillStyle = DEFAULT_BG_COLOR;
@@ -362,14 +262,13 @@
                 '#008080', '#007aff', '#00008B', '#5856d6', '#8e44ad',
                 '#c8a2c8', '#FF69B4', '#ffffff'
             ];
-
-            colors.forEach((c) => {
+            colors.forEach(c => {
                 const dot = document.createElement('div');
                 dot.className = 'color-dot';
                 dot.style.background = c;
                 if (c === currentColor) dot.classList.add('active');
                 dot.onclick = () => {
-                    document.querySelectorAll('.color-dot').forEach((d) => d.classList.remove('active'));
+                    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
                     dot.classList.add('active');
                     currentColor = c;
                 };
@@ -377,11 +276,6 @@
             });
 
             initBrushesSelector();
-            debugLog('Страница инициализирована');
-            debugLog('uploadUrl =', uploadUrl);
-            debugLog('task =', params.get('task') || 'Рисуй!');
-            debugLog('user_id =', params.get('user_id') || tg.initDataUnsafe.user?.id || 'unknown');
-            debugLog('chat_id =', params.get('chat_id') || '');
         }
 
         function saveState() {
@@ -393,7 +287,7 @@
         function undo() {
             if (history.length > 1) {
                 redoHistory.push(history.pop());
-                const img = new Image();
+                let img = new Image();
                 img.src = history[history.length - 1];
                 img.onload = () => {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -406,7 +300,7 @@
             if (redoHistory.length > 0) {
                 const data = redoHistory.pop();
                 history.push(data);
-                const img = new Image();
+                let img = new Image();
                 img.src = data;
                 img.onload = () => {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -458,8 +352,7 @@
                 cy++;
                 currentPos += w * 4;
 
-                let reachLeft = false;
-                let reachRight = false;
+                let reachLeft = false, reachRight = false;
                 while (cy < h && matchStartColor(currentPos)) {
                     colorPixel(currentPos);
 
@@ -492,112 +385,19 @@
             ctx.putImageData(imageData, 0, 0);
         }
 
-        function getPosFromClient(clientX, clientY) {
+        const getPos = (e) => {
             const rect = canvas.getBoundingClientRect();
+            const t = e.touches ? e.touches[0] : e;
             const dpr = window.devicePixelRatio || 1;
             const scaleX = canvas.width / (rect.width * dpr);
             const scaleY = canvas.height / (rect.height * dpr);
-            return {
-                x: (clientX - rect.left) * scaleX,
-                y: (clientY - rect.top) * scaleY,
-            };
-        }
-
-        function beginStroke(clientX, clientY) {
-            drawing = true;
-            hasMoved = false;
-            const p = getPosFromClient(clientX, clientY);
-            startX = p.x;
-            startY = p.y;
-
-            ctx.lineWidth = document.getElementById('size-slider').value;
-            ctx.globalAlpha = currentTool === 'marker' ? 0.3 : 1.0;
-            ctx.fillStyle = currentTool === 'eraser' ? DEFAULT_BG_COLOR : currentColor;
-            ctx.strokeStyle = currentTool === 'eraser' ? DEFAULT_BG_COLOR : currentColor;
-
-            if (currentTool === 'fill') {
-                floodFill(p.x, p.y, currentColor);
-                saveState();
-                drawing = false;
-            } else if (currentTool === 'rect' || currentTool === 'circle') {
-                savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            } else {
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-            }
-        }
-
-        function moveStroke(clientX, clientY) {
-            if (!drawing) return;
-            hasMoved = true;
-            const p = getPosFromClient(clientX, clientY);
-
-            if (currentTool === 'brush' || currentTool === 'marker' || currentTool === 'eraser') {
-                ctx.lineTo(p.x, p.y);
-                ctx.stroke();
-            } else if (currentTool === 'spray') {
-                for (let i = 0; i < 10; i++) {
-                    const offsetX = (Math.random() - 0.5) * ctx.lineWidth * 2;
-                    const offsetY = (Math.random() - 0.5) * ctx.lineWidth * 2;
-                    ctx.fillRect(p.x + offsetX, p.y + offsetY, 2, 2);
-                }
-            } else if (currentTool === 'rect') {
-                ctx.putImageData(savedImageData, 0, 0);
-                ctx.strokeRect(startX, startY, p.x - startX, p.y - startY);
-            } else if (currentTool === 'circle') {
-                ctx.putImageData(savedImageData, 0, 0);
-                const radius = Math.hypot(p.x - startX, p.y - startY);
-                ctx.beginPath();
-                ctx.arc(startX, startY, radius, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-        }
-
-        function endStroke() {
-            if (!drawing) return;
-            if (!hasMoved && ['brush', 'marker', 'spray', 'eraser'].includes(currentTool)) {
-                ctx.globalAlpha = currentTool === 'marker' ? 0.3 : 1.0;
-                ctx.fillStyle = currentTool === 'eraser' ? DEFAULT_BG_COLOR : currentColor;
-                ctx.beginPath();
-                ctx.arc(startX, startY, document.getElementById('size-slider').value / 2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            ctx.globalAlpha = 1.0;
-            saveState();
-            drawing = false;
-        }
-
-        canvas.addEventListener('pointerdown', (e) => {
-            if (e.pointerType === 'touch' && e.isPrimary === false) return;
-            if (activePointerId !== null) return;
-            activePointerId = e.pointerId;
-            canvas.setPointerCapture(e.pointerId);
-            beginStroke(e.clientX, e.clientY);
-        });
-
-        canvas.addEventListener('pointermove', (e) => {
-            if (e.pointerId !== activePointerId) return;
-            moveStroke(e.clientX, e.clientY);
-        });
-
-        function finishPointer(e) {
-            if (e.pointerId !== activePointerId) return;
-            endStroke();
-            activePointerId = null;
-        }
-
-        canvas.addEventListener('pointerup', finishPointer);
-        canvas.addEventListener('pointercancel', finishPointer);
-        canvas.addEventListener('pointerleave', (e) => {
-            if (e.pointerId === activePointerId && drawing) {
-                endStroke();
-                activePointerId = null;
-            }
-        });
+            return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+        };
 
         canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+
             if (e.touches.length === 2) {
-                e.preventDefault();
                 drawing = false;
                 initialPinchDistance = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
@@ -605,24 +405,50 @@
                 );
                 initialPinchCenter = {
                     x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-                    y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+                    y: (e.touches[0].clientY + e.touches[1].clientY) / 2
                 };
                 startScale = currentScale;
                 startTranslateX = translateX;
                 startTranslateY = translateY;
+                return;
+            }
+
+            if (e.touches.length === 1) {
+                drawing = true;
+                hasMoved = false;
+                let p = getPos(e);
+                startX = p.x;
+                startY = p.y;
+
+                ctx.lineWidth = document.getElementById('size-slider').value;
+                ctx.globalAlpha = currentTool === 'marker' ? 0.3 : 1.0;
+                ctx.fillStyle = currentTool === 'eraser' ? DEFAULT_BG_COLOR : currentColor;
+                ctx.strokeStyle = currentTool === 'eraser' ? DEFAULT_BG_COLOR : currentColor;
+
+                if (currentTool === 'fill') {
+                    floodFill(p.x, p.y, currentColor);
+                    saveState();
+                    drawing = false;
+                } else if (currentTool === 'rect' || currentTool === 'circle') {
+                    savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                } else {
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                }
             }
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+
             if (e.touches.length === 2 && initialPinchDistance) {
-                e.preventDefault();
                 const currentDistance = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
                 const currentCenter = {
                     x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-                    y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+                    y: (e.touches[0].clientY + e.touches[1].clientY) / 2
                 };
 
                 const deltaScale = currentDistance / initialPinchDistance;
@@ -637,6 +463,32 @@
                 }
 
                 canvas.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+                return;
+            }
+
+            if (drawing && e.touches.length === 1) {
+                hasMoved = true;
+                let p = getPos(e);
+
+                if (currentTool === 'brush' || currentTool === 'marker' || currentTool === 'eraser') {
+                    ctx.lineTo(p.x, p.y);
+                    ctx.stroke();
+                } else if (currentTool === 'spray') {
+                    for (let i = 0; i < 10; i++) {
+                        let offsetX = (Math.random() - 0.5) * ctx.lineWidth * 2;
+                        let offsetY = (Math.random() - 0.5) * ctx.lineWidth * 2;
+                        ctx.fillRect(p.x + offsetX, p.y + offsetY, 2, 2);
+                    }
+                } else if (currentTool === 'rect') {
+                    ctx.putImageData(savedImageData, 0, 0);
+                    ctx.strokeRect(startX, startY, p.x - startX, p.y - startY);
+                } else if (currentTool === 'circle') {
+                    ctx.putImageData(savedImageData, 0, 0);
+                    let radius = Math.hypot(p.x - startX, p.y - startY);
+                    ctx.beginPath();
+                    ctx.arc(startX, startY, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
             }
         }, { passive: false });
 
@@ -645,7 +497,20 @@
                 initialPinchDistance = null;
                 initialPinchCenter = null;
             }
-        }, { passive: false });
+
+            if (drawing && e.touches.length === 0) {
+                if (!hasMoved && ['brush', 'marker', 'spray', 'eraser'].includes(currentTool)) {
+                    ctx.globalAlpha = currentTool === 'marker' ? 0.3 : 1.0;
+                    ctx.fillStyle = currentTool === 'eraser' ? DEFAULT_BG_COLOR : currentColor;
+                    ctx.beginPath();
+                    ctx.arc(startX, startY, document.getElementById('size-slider').value / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1.0;
+                saveState();
+                drawing = false;
+            }
+        });
 
         function clearCanvas() {
             ctx.fillStyle = DEFAULT_BG_COLOR;
@@ -663,34 +528,19 @@
         }
 
         function sendBlob(blob, keepalive = false) {
-            debugLog('Отправка на URL:', uploadUrl);
-            debugLog('Размер blob:', blob?.size || 0, 'байт');
-
             return fetch(uploadUrl, {
                 method: 'POST',
                 body: buildFormData(blob),
                 mode: 'cors',
-                keepalive,
-            }).then(async (res) => {
-                const responseText = await res.text().catch(() => '');
-                debugLog('Ответ сервера:', res.status, responseText || '[empty]');
-                if (!res.ok) {
-                    throw new Error(`Ошибка сервера ${res.status}: ${responseText || 'empty response'}`);
-                }
-                return res;
+                keepalive
             });
         }
 
         function autoSend() {
             if (isSent) return;
             isSent = true;
-            debugLog('Срабатывает автоотправка');
             canvas.toBlob((blob) => {
-                if (!blob) {
-                    debugLog('Автоотправка: canvas.toBlob вернул null');
-                    return;
-                }
-                sendBlob(blob, true).catch((e) => debugLog('Фоновая отправка:', e.message || String(e)));
+                sendBlob(blob, true).catch((e) => console.log('Фоновая отправка:', e));
             }, 'image/png');
         }
 
@@ -704,7 +554,6 @@
             if (isSent) return;
             isSent = true;
             clearInterval(timerInterval);
-            debugLog('Нажата кнопка Готово');
 
             const sendBtn = document.getElementById('send-btn');
             sendBtn.innerHTML = '<div class="spinner"></div>';
@@ -712,25 +561,16 @@
             sendBtn.style.opacity = '0.7';
 
             canvas.toBlob((blob) => {
-                debugLog('canvas.toBlob выполнен');
-                if (!blob) {
-                    debugLog('canvas.toBlob вернул null');
-                    alert('Не удалось подготовить изображение для отправки.');
-                    isSent = false;
-                    sendBtn.innerText = 'Готово';
-                    sendBtn.disabled = false;
-                    sendBtn.style.opacity = '1';
-                    return;
-                }
-
                 sendBlob(blob, false)
-                    .then(() => {
-                        debugLog('Успешно отправлено, закрываю WebApp');
-                        tg.close();
+                    .then((res) => {
+                        if (res.ok) {
+                            tg.close();
+                        } else {
+                            throw new Error('Ошибка сервера: ' + res.status);
+                        }
                     })
-                    .catch((e) => {
-                        debugLog('Ошибка отправки:', e.message || String(e));
-                        alert('Ошибка отправки: ' + (e.message || String(e)));
+                    .catch(() => {
+                        alert('Ошибка отправки! Проверь, что сервер бота доступен.');
                         isSent = false;
                         sendBtn.innerText = 'Готово';
                         sendBtn.disabled = false;
