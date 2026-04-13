@@ -528,19 +528,12 @@
         }
 
         function sendBlob(blob, keepalive = false) {
-            const formData = buildFormData(blob);
-            console.log('[draw] uploadUrl =', uploadUrl);
-            console.log('[draw] keepalive =', keepalive);
-            console.log('[draw] formData fields =', {
-                hasImage: formData.has('image'),
-                user_id: formData.get('user_id'),
-                chat_id: formData.get('chat_id'),
-                hasInitData: !!formData.get('init_data')
-            });
-
+            console.log('UPLOAD URL:', uploadUrl);
+            console.log('KEEPALIVE:', keepalive);
+            console.log('TG initData exists:', !!tg.initData);
             return fetch(uploadUrl, {
                 method: 'POST',
-                body: formData,
+                body: buildFormData(blob),
                 mode: 'cors',
                 keepalive
             });
@@ -560,7 +553,27 @@
             if (document.visibilityState === 'hidden') autoSend();
         });
 
-        function sendDrawing() {
+        function resetSendButton() {
+            const sendBtn = document.getElementById('send-btn');
+            sendBtn.innerText = 'Готово';
+            sendBtn.disabled = false;
+            sendBtn.style.opacity = '1';
+        }
+
+        function closeWebAppSafely() {
+            setTimeout(() => {
+                try {
+                    tg.close();
+                } catch (e) {
+                    console.log('tg.close failed:', e);
+                    try {
+                        window.close();
+                    } catch (_) {}
+                }
+            }, 150);
+        }
+
+        async function sendDrawing() {
             if (isSent) return;
             isSent = true;
             clearInterval(timerInterval);
@@ -570,31 +583,35 @@
             sendBtn.disabled = true;
             sendBtn.style.opacity = '0.7';
 
-            canvas.toBlob((blob) => {
-                sendBlob(blob, false)
-                    .then(async (res) => {
-                        const text = await res.text().catch(() => '');
-                        console.log('[draw] upload response:', res.status, text);
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    alert('Не удалось подготовить изображение.');
+                    isSent = false;
+                    resetSendButton();
+                    return;
+                }
 
-                        if (res.ok) {
-                            tg.close();
-                            return;
-                        }
+                try {
+                    const res = await sendBlob(blob, false);
+                    const responseText = await res.text().catch(() => '');
 
-                        let message = 'Ошибка сервера: ' + res.status;
-                        if (text) {
-                            message += '\n' + text;
-                        }
-                        throw new Error(message);
-                    })
-                    .catch((err) => {
-                        console.error('[draw] send failed:', err);
-                        alert('Ошибка отправки!\n' + (err?.message || 'Проверь, что сервер бота доступен.'));
-                        isSent = false;
-                        sendBtn.innerText = 'Готово';
-                        sendBtn.disabled = false;
-                        sendBtn.style.opacity = '1';
-                    });
+                    console.log('UPLOAD STATUS:', res.status);
+                    console.log('UPLOAD RESPONSE:', responseText);
+
+                    if (res.ok) {
+                        closeWebAppSafely();
+                        return;
+                    }
+
+                    throw new Error(responseText || ('Ошибка сервера: ' + res.status));
+                } catch (err) {
+                    console.log('SEND ERROR:', err);
+
+                    alert('Отправка могла пройти успешно. Если бот уже написал, что рисунок принят, просто закрой окно.');
+
+                    isSent = false;
+                    resetSendButton();
+                }
             }, 'image/png');
         }
 
