@@ -528,9 +528,19 @@
         }
 
         function sendBlob(blob, keepalive = false) {
+            const formData = buildFormData(blob);
+            console.log('[draw] uploadUrl =', uploadUrl);
+            console.log('[draw] keepalive =', keepalive);
+            console.log('[draw] formData fields =', {
+                hasImage: formData.has('image'),
+                user_id: formData.get('user_id'),
+                chat_id: formData.get('chat_id'),
+                hasInitData: !!formData.get('init_data')
+            });
+
             return fetch(uploadUrl, {
                 method: 'POST',
-                body: buildFormData(blob),
+                body: formData,
                 mode: 'cors',
                 keepalive
             });
@@ -562,15 +572,24 @@
 
             canvas.toBlob((blob) => {
                 sendBlob(blob, false)
-                    .then((res) => {
+                    .then(async (res) => {
+                        const text = await res.text().catch(() => '');
+                        console.log('[draw] upload response:', res.status, text);
+
                         if (res.ok) {
                             tg.close();
-                        } else {
-                            throw new Error('Ошибка сервера: ' + res.status);
+                            return;
                         }
+
+                        let message = 'Ошибка сервера: ' + res.status;
+                        if (text) {
+                            message += '\n' + text;
+                        }
+                        throw new Error(message);
                     })
-                    .catch(() => {
-                        alert('Ошибка отправки! Проверь, что сервер бота доступен.');
+                    .catch((err) => {
+                        console.error('[draw] send failed:', err);
+                        alert('Ошибка отправки!\n' + (err?.message || 'Проверь, что сервер бота доступен.'));
                         isSent = false;
                         sendBtn.innerText = 'Готово';
                         sendBtn.disabled = false;
