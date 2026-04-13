@@ -145,7 +145,6 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.ready();
-        tg.enableClosingConfirmation();
 
         const params = new URLSearchParams(window.location.search);
         const uploadUrl = params.get('upload_url') || 'https://krizisphone.fun/upload';
@@ -195,7 +194,7 @@
                 progress.style.strokeDashoffset = ((seconds - Math.max(timeLeft, 0)) / seconds) * circ;
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    sendDrawing(true);
+                    sendDrawing();
                     return;
                 }
                 timeLeft--;
@@ -527,7 +526,7 @@
             return formData;
         }
 
-        function sendBlob(blob, keepalive = false) {
+        function sendBlob(blob, keepalive = false, signal = undefined) {
             console.log('UPLOAD URL:', uploadUrl);
             console.log('KEEPALIVE:', keepalive);
             console.log('TG initData exists:', !!tg.initData);
@@ -535,33 +534,13 @@
                 method: 'POST',
                 body: buildFormData(blob),
                 mode: 'cors',
-                keepalive
+                keepalive,
+                signal
             });
         }
 
-        function autoSend() {
-            if (isSent) return;
-            isSent = true;
-            canvas.toBlob((blob) => {
-                sendBlob(blob, true).catch((e) => console.log('Фоновая отправка:', e));
-            }, 'image/png');
-        }
-
-        window.addEventListener('beforeunload', autoSend);
-        window.addEventListener('pagehide', autoSend);
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') autoSend();
-        });
-
-        function resetSendButton() {
-            const sendBtn = document.getElementById('send-btn');
-            sendBtn.innerText = 'Готово';
-            sendBtn.disabled = false;
-            sendBtn.style.opacity = '1';
-        }
-
-        function closeWebAppSafely(forceMode = false) {
-            const tryClose = () => {
+        function closeWebAppSafely() {
+            setTimeout(() => {
                 try {
                     tg.close();
                 } catch (e) {
@@ -570,96 +549,66 @@
                         window.close();
                     } catch (_) {}
                 }
-            };
-
-            if (forceMode) {
-                tryClose();
-                setTimeout(tryClose, 150);
-                setTimeout(tryClose, 500);
-                setTimeout(tryClose, 1200);
-                return;
-            }
-
-            setTimeout(tryClose, 150);
+            }, 150);
         }
 
-        async function sendDrawing(forceClose = false) {
-            if (isSent) return;
-            isSent = true;
-            clearInterval(timerInterval);
-
+        function lockSendButton() {
             const sendBtn = document.getElementById('send-btn');
             sendBtn.innerHTML = '<div class="spinner"></div>';
             sendBtn.disabled = true;
             sendBtn.style.opacity = '0.7';
+        }
 
-            if (forceClose) {
-                setTimeout(() => {
-                    if (isSent) {
-                        closeWebAppSafely(true);
-                    }
-                }, 1800);
-            }
+        function sendAndClose({ background = false } = {}) {
+            if (isSent) return;
+            isSent = true;
+            clearInterval(timerInterval);
+            lockSendButton();
 
             canvas.toBlob(async (blob) => {
                 if (!blob) {
-                    alert('Не удалось подготовить изображение.');
-                    isSent = false;
-                    resetSendButton();
+                    closeWebAppSafely();
                     return;
                 }
 
                 try {
-                    const res = await sendBlob(blob, false);
-                    const responseText = await res.text().catch(() => '');
-
-                    console.log('UPLOAD STATUS:', res.status);
-                    console.log('UPLOAD RESPONSE:', responseText);
-
-                    if (res.ok) {
-                        closeWebAppSafely(forceClose);
-                        return;
-                    }
-
-                    throw new Error(responseText || ('Ошибка сервера: ' + res.status));
-                } catch (err) {
-                    console.log('SEND ERROR:', err);
-
-                    if (forceClose) {
-                        closeWebAppSafely(true);
-                        return;
-                    }
-
-                    alert('Отправка могла пройти успешно. Если бот уже написал, что рисунок принят, просто закрой окно.');
-
-                    isSent = false;
-                    resetSendButton();
-                }
-            }, 'image/png');
-        }
-
-                try {
-                    const res = await sendBlob(blob, false);
-                    const responseText = await res.text().catch(() => '');
-
-                    console.log('UPLOAD STATUS:', res.status);
-                    console.log('UPLOAD RESPONSE:', responseText);
-
-                    if (res.ok) {
+                    if (background) {
+                        sendBlob(blob, true).catch((e) => console.log('Фоновая отправка:', e));
                         closeWebAppSafely();
                         return;
                     }
 
-                    throw new Error(responseText || ('Ошибка сервера: ' + res.status));
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+                    try {
+                        const res = await sendBlob(blob, false, controller.signal);
+                        const responseText = await res.text().catch(() => '');
+                        console.log('UPLOAD STATUS:', res.status);
+                        console.log('UPLOAD RESPONSE:', responseText);
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
                 } catch (err) {
                     console.log('SEND ERROR:', err);
-
-                    alert('Отправка могла пройти успешно. Если бот уже написал, что рисунок принят, просто закрой окно.');
-
-                    isSent = false;
-                    resetSendButton();
                 }
+
+                closeWebAppSafely();
             }, 'image/png');
+        }
+
+        function autoSend() {
+            sendAndClose({ background: true });
+        }
+
+        window.addEventListener('beforeunload', autoSend);
+        window.addEventListener('pagehide', autoSend);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') autoSend();
+        });
+
+        function sendDrawing() {
+            sendAndClose({ background: false });
         }
 
         init();
