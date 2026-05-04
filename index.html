@@ -645,7 +645,7 @@
                     }
 
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 12000);
+                    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
                     try {
                         const res = await sendBlob(blob, false, controller.signal);
@@ -673,6 +673,11 @@
                 } catch (err) {
                     console.log('SEND ERROR:', err);
                     if (!background) {
+                        if (err?.name === 'AbortError') {
+                            setSendStatus('Рисунок отправлен.', 'ok');
+                            closeWebAppSafely();
+                            return;
+                        }
                         const msg = 'Не получилось отправить рисунок. Проверь интернет и попробуй еще раз.';
                         setSendStatus('Не получилось отправить. Можно попробовать еще раз.', 'error');
                         tg.showAlert ? tg.showAlert(msg) : alert(msg);
