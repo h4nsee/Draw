@@ -72,6 +72,9 @@
         #clear-btn, #undo-btn, #redo-btn { width: 55px; background: var(--panel-color); color: var(--accent-color); border: 1px solid var(--border-color)!important; }
         #clear-btn { color: var(--danger-color); }
         .btn-send { flex-grow: 1; background: var(--accent-color); color: white; font-size: 16px; }
+        .send-status { min-height: 18px; margin-top: 8px; color: #8e8e93; font-size: 12px; line-height: 1.3; text-align: center; }
+        .send-status.error { color: var(--danger-color); }
+        .send-status.ok { color: #34c759; }
         .icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
         .spinner { width: 24px; height: 24px; border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #ffffff; animation: spin 1s ease-in-out infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -139,10 +142,20 @@
             <button class="action-btn" id="redo-btn" onclick="redo()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 10H11a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10m-4-6 4-4-4-4"/></svg></button>
             <button class="action-btn btn-send" id="send-btn" onclick="sendDrawing()">Готово</button>
         </div>
+        <div class="send-status" id="send-status"></div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
+        const tg = window.Telegram?.WebApp || {
+            initData: '',
+            initDataUnsafe: {},
+            colorScheme: 'dark',
+            expand() {},
+            ready() {},
+            setHeaderColor() {},
+            close() {},
+            showAlert: null
+        };
         tg.expand();
         tg.ready();
 
@@ -151,7 +164,7 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let drawing = false, history = [], redoHistory = [], currentColor = '#000000', currentTool = 'brush';
-        let isSent = false, timerInterval;
+        let isSent = false, timerInterval, timerTotalSeconds = 60, timerTimeLeft = 60;
         let startX = 0, startY = 0, hasMoved = false, savedImageData = null;
         const DEFAULT_BG_COLOR = "#ffffff";
 
@@ -183,21 +196,41 @@
             localStorage.setItem('user_theme', newTheme);
         };
 
-        function startTimer(seconds) {
-            let timeLeft = seconds;
+        function updateTimerDisplay() {
             const progress = document.getElementById('timer-progress');
             const circ = 2 * Math.PI * 17;
             progress.style.strokeDasharray = circ;
-            document.getElementById('timer-num').innerText = timeLeft;
+            document.getElementById('timer-num').innerText = Math.max(timerTimeLeft, 0);
+            progress.style.strokeDashoffset = ((timerTotalSeconds - Math.max(timerTimeLeft, 0)) / timerTotalSeconds) * circ;
+        }
+
+        function startTimer(seconds) {
+            clearInterval(timerInterval);
+            timerTotalSeconds = Math.max(parseInt(seconds || '60', 10), 1);
+            timerTimeLeft = timerTotalSeconds;
+            updateTimerDisplay();
             timerInterval = setInterval(() => {
-                document.getElementById('timer-num').innerText = Math.max(timeLeft, 0);
-                progress.style.strokeDashoffset = ((seconds - Math.max(timeLeft, 0)) / seconds) * circ;
-                if (timeLeft <= 0) {
+                updateTimerDisplay();
+                if (timerTimeLeft <= 0) {
                     clearInterval(timerInterval);
                     sendDrawing();
                     return;
                 }
-                timeLeft--;
+                timerTimeLeft--;
+            }, 1000);
+        }
+
+        function resumeTimerAfterFailedSend() {
+            if (timerTimeLeft <= 0) return;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                updateTimerDisplay();
+                if (timerTimeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    sendDrawing();
+                    return;
+                }
+                timerTimeLeft--;
             }, 1000);
         }
 
@@ -520,10 +553,21 @@
         function buildFormData(blob) {
             const formData = new FormData();
             formData.append('image', blob, 'drawing.png');
+            formData.append('task_id', params.get('task_id') || '');
             formData.append('user_id', params.get('user_id') || tg.initDataUnsafe.user?.id || 'unknown');
             formData.append('chat_id', params.get('chat_id') || '');
             formData.append('init_data', tg.initData || '');
             return formData;
+        }
+
+        function getMissingUploadDataMessage() {
+            const missing = [];
+            if (!params.get('task_id')) missing.push('task_id');
+            if (!params.get('chat_id')) missing.push('chat_id');
+            if (!(params.get('user_id') || tg.initDataUnsafe.user?.id)) missing.push('user_id');
+            if (!tg.initData) missing.push('initData');
+            if (!missing.length) return '';
+            return `Не хватает данных для отправки: ${missing.join(', ')}. Открой задание из Telegram заново.`;
         }
 
         function sendBlob(blob, keepalive = false, signal = undefined) {
@@ -552,21 +596,43 @@
             }, 150);
         }
 
-        function lockSendButton() {
+        function setSendStatus(message = '', kind = '') {
+            const status = document.getElementById('send-status');
+            status.innerText = message;
+            status.className = `send-status ${kind}`.trim();
+        }
+
+        function lockSendButton(locked = true) {
             const sendBtn = document.getElementById('send-btn');
-            sendBtn.innerHTML = '<div class="spinner"></div>';
-            sendBtn.disabled = true;
-            sendBtn.style.opacity = '0.7';
+            if (locked) {
+                sendBtn.innerHTML = '<div class="spinner"></div>';
+                sendBtn.disabled = true;
+                sendBtn.style.opacity = '0.7';
+            } else {
+                sendBtn.innerText = 'Готово';
+                sendBtn.disabled = false;
+                sendBtn.style.opacity = '1';
+            }
         }
 
         function sendAndClose({ background = false } = {}) {
             if (isSent) return;
+            const missingDataMessage = getMissingUploadDataMessage();
+            if (missingDataMessage) {
+                if (!background) {
+                    setSendStatus('Открой задание из Telegram заново.', 'error');
+                    tg.showAlert ? tg.showAlert(missingDataMessage) : alert(missingDataMessage);
+                }
+                return;
+            }
             isSent = true;
             clearInterval(timerInterval);
             lockSendButton();
+            if (!background) setSendStatus('Отправляю рисунок...');
 
             canvas.toBlob(async (blob) => {
                 if (!blob) {
+                    if (!background) setSendStatus('Не удалось подготовить рисунок.', 'error');
                     closeWebAppSafely();
                     return;
                 }
@@ -579,18 +645,42 @@
                     }
 
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    const timeoutId = setTimeout(() => controller.abort(), 12000);
 
                     try {
                         const res = await sendBlob(blob, false, controller.signal);
                         const responseText = await res.text().catch(() => '');
                         console.log('UPLOAD STATUS:', res.status);
                         console.log('UPLOAD RESPONSE:', responseText);
+                        let responseJson = null;
+                        try {
+                            responseJson = responseText ? JSON.parse(responseText) : null;
+                        } catch (_) {}
+                        if (!res.ok || (responseJson && responseJson.ok === false)) {
+                            const msg = responseJson?.message || 'Не получилось отправить рисунок.';
+                            const alertMsg = responseJson?.request_id ? `${msg}\nID: ${responseJson.request_id}` : msg;
+                            setSendStatus(responseJson?.request_id ? `Ошибка отправки. ID: ${responseJson.request_id}` : 'Ошибка отправки.', 'error');
+                            tg.showAlert ? tg.showAlert(alertMsg) : alert(alertMsg);
+                            isSent = false;
+                            lockSendButton(false);
+                            resumeTimerAfterFailedSend();
+                            return;
+                        }
+                        if (!background) setSendStatus('Рисунок принят.', 'ok');
                     } finally {
                         clearTimeout(timeoutId);
                     }
                 } catch (err) {
                     console.log('SEND ERROR:', err);
+                    if (!background) {
+                        const msg = 'Не получилось отправить рисунок. Проверь интернет и попробуй еще раз.';
+                        setSendStatus('Не получилось отправить. Можно попробовать еще раз.', 'error');
+                        tg.showAlert ? tg.showAlert(msg) : alert(msg);
+                        isSent = false;
+                        lockSendButton(false);
+                        resumeTimerAfterFailedSend();
+                        return;
+                    }
                 }
 
                 closeWebAppSafely();
