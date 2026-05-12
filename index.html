@@ -165,8 +165,11 @@
         const ctx = canvas.getContext('2d');
         let drawing = false, history = [], redoHistory = [], currentColor = '#000000', currentTool = 'brush';
         let isSent = false, timerInterval, timerTotalSeconds = 60, timerTimeLeft = 60;
+        let backgroundSendStarted = false;
         let startX = 0, startY = 0, hasMoved = false, savedImageData = null;
         const DEFAULT_BG_COLOR = "#ffffff";
+        const MANUAL_UPLOAD_TIMEOUT_MS = 60000;
+        const MANUAL_UPLOAD_RETRIES = 1;
 
         let currentScale = 1;
         let translateX = 0, translateY = 0;
@@ -570,17 +573,29 @@
             return `Не хватает данных для отправки: ${missing.join(', ')}. Открой задание из Telegram заново.`;
         }
 
-        function sendBlob(blob, keepalive = false, signal = undefined) {
+        async function sendBlob(blob, keepalive = false, signal = undefined) {
             console.log('UPLOAD URL:', uploadUrl);
             console.log('KEEPALIVE:', keepalive);
             console.log('TG initData exists:', !!tg.initData);
-            return fetch(uploadUrl, {
-                method: 'POST',
-                body: buildFormData(blob),
-                mode: 'cors',
-                keepalive,
-                signal
-            });
+            let lastError = null;
+            const attempts = keepalive ? 1 : MANUAL_UPLOAD_RETRIES + 1;
+            for (let attempt = 0; attempt < attempts; attempt++) {
+                try {
+                    return await fetch(uploadUrl, {
+                        method: 'POST',
+                        body: buildFormData(blob),
+                        mode: 'cors',
+                        keepalive,
+                        signal
+                    });
+                } catch (err) {
+                    lastError = err;
+                    console.log('UPLOAD ATTEMPT FAILED:', attempt + 1, err);
+                    if (attempt + 1 >= attempts) throw err;
+                    await new Promise(resolve => setTimeout(resolve, 900));
+                }
+            }
+            throw lastError;
         }
 
         function closeWebAppSafely() {
@@ -617,6 +632,7 @@
 
         function sendAndClose({ background = false } = {}) {
             if (isSent) return;
+            if (background && backgroundSendStarted) return;
             const missingDataMessage = getMissingUploadDataMessage();
             if (missingDataMessage) {
                 if (!background) {
@@ -625,9 +641,15 @@
                 }
                 return;
             }
-            isSent = true;
-            clearInterval(timerInterval);
-            lockSendButton();
+            if (background) {
+                backgroundSendStarted = true;
+            } else {
+                isSent = true;
+            }
+            if (!background) {
+                clearInterval(timerInterval);
+                lockSendButton();
+            }
             if (!background) setSendStatus('Отправляю рисунок...');
 
             canvas.toBlob(async (blob) => {
@@ -645,7 +667,7 @@
                     }
 
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 25000);
+                    const timeoutId = setTimeout(() => controller.abort(), MANUAL_UPLOAD_TIMEOUT_MS);
 
                     try {
                         const res = await sendBlob(blob, false, controller.signal);
@@ -673,7 +695,7 @@
                 } catch (err) {
                     console.log('SEND ERROR:', err);
                     if (!background) {
-                        if (err?.name === 'AbortError') {
+                        if (false && err?.name === 'AbortError') {
                             setSendStatus('Рисунок отправлен.', 'ok');
                             closeWebAppSafely();
                             return;
@@ -698,10 +720,6 @@
 
         window.addEventListener('beforeunload', autoSend);
         window.addEventListener('pagehide', autoSend);
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') autoSend();
-        });
-
         function sendDrawing() {
             sendAndClose({ background: false });
         }
